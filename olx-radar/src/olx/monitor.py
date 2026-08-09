@@ -33,6 +33,13 @@ def select_new_from(
     *,
     seen: set[int],
     last_pushups: Mapping[int, datetime | None],
+    # last_refresh_time (listing.refreshed_at) -- НЕ то же самое, что pushup_time.
+    # Проверено на живом ответе API: у объявления с платным продвижением
+    # (promotion.options: ["bundle_basic"]) именно last_refresh_time совпадало
+    # с «Опубліковано сьогодні о 15:25» на странице, пока pushup_time стоял на
+    # месте от последнего РУЧНОГО поднятия 11 дней назад. Автоподъём двигает
+    # именно это поле, не pushup_time -- без него бот такие поднятия не видел.
+    last_refreshes: Mapping[int, datetime | None] = {},
     # Дефолт безопасен: функция только читает из price_changed (.get/in), никогда
     # не мутирует. Без дефолта уже существующие вызовы (в т.ч. в тестах) ломались бы
     # каждый раз, когда про изменение цены знать не нужно.
@@ -51,13 +58,24 @@ def select_new_from(
         if watch.notify_mode is not NotifyMode.NEW_PUSHUP:
             continue
 
-        # Объявление было поднято.
+        # Объявление было поднято -- вручную (pushup_time) или автоматически
+        # платным продвижением (last_refresh_time). Любое из двух считается
+        # поднятием: продавца, готового платить за место в топе, найти хочется
+        # в обоих случаях одинаково.
+        pushed_up = False
         if listing.pushed_at is not None:
-            previous = last_pushups.get(listing.id)
+            previous_pushup = last_pushups.get(listing.id)
+            if previous_pushup is None or listing.pushed_at > previous_pushup:
+                pushed_up = True
 
-            if previous is None or listing.pushed_at > previous:
-                finds.append(Find(listing, "pushup"))
-                continue
+        if not pushed_up and listing.refreshed_at is not None:
+            previous_refresh = last_refreshes.get(listing.id)
+            if previous_refresh is None or listing.refreshed_at > previous_refresh:
+                pushed_up = True
+
+        if pushed_up:
+            finds.append(Find(listing, "pushup"))
+            continue
 
         # Цена изменилась.
         if listing.id in price_changed:
@@ -87,12 +105,18 @@ def select_new(
         for lst in listings
         if lst.id in seen
     }
+    last_refreshes = {
+        lst.id: storage.last_refresh(watch.id, lst.id)
+        for lst in listings
+        if lst.id in seen
+    }
 
     return select_new_from(
         watch,
         listings,
         seen=seen,
         last_pushups=last_pushups,
+        last_refreshes=last_refreshes,
         price_changed=price_changed,
     )
 

@@ -7,7 +7,7 @@ from olx.monitor import select_new_from
 T0 = datetime(2026, 7, 22, 10, 0, tzinfo=UTC)
 
 
-def _listing(listing_id: int, *, created=T0, pushed=None) -> Listing:
+def _listing(listing_id: int, *, created=T0, pushed=None, refreshed=None) -> Listing:
     return Listing(
         id=listing_id,
         url=f"https://www.olx.ua/d/uk/obyavlenie/{listing_id}.html",
@@ -25,7 +25,7 @@ def _listing(listing_id: int, *, created=T0, pushed=None) -> Listing:
         status="active",
         created_at=created,
         pushed_at=pushed,
-        refreshed_at=None,
+        refreshed_at=refreshed,
         photo_url=None,
         category_id=85,
         seller_id=1,
@@ -144,3 +144,74 @@ def test_mixed_new_and_pushup_in_one_batch():
         _watch(NotifyMode.NEW_PUSHUP), listings, seen={100}, last_pushups={100: T0}
     )
     assert [(f.listing.id, f.reason) for f in finds] == [(100, "pushup"), (200, "new")]
+
+
+# --- last_refresh_time: платное продвижение (автоподъём) двигает ЭТО поле, не
+# pushup_time -- подтверждено сверкой с живым ответом API OLX (2026-08-09, объявление
+# ID10PorN с promotion.options=["bundle_basic"]): last_refresh_time совпало день-в-день
+# с "Опубліковано" на странице, а pushup_time стоял на месте 11 дней с последнего
+# ручного подъёма. Без учёта этого поля бот такие автоподъёмы не видел вовсе.
+
+
+def test_refresh_without_pushup_still_notifies_as_pushup():
+    # Ключевой сценарий из живого случая: pushup_time не изменился вообще
+    # (pushed=None здесь эквивалентно "не сдвинулся"), а refreshed_at вырос.
+    listings = [_listing(100, refreshed=T0 + timedelta(hours=1))]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PUSHUP),
+        listings,
+        seen={100},
+        last_pushups={100: None},
+        last_refreshes={100: T0},
+    )
+    assert [f.reason for f in finds] == ["pushup"]
+
+
+def test_refresh_without_recorded_baseline_notifies_once():
+    listings = [_listing(100, refreshed=T0)]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PUSHUP),
+        listings,
+        seen={100},
+        last_pushups={100: None},
+        last_refreshes={100: None},
+    )
+    assert [f.reason for f in finds] == ["pushup"]
+
+
+def test_older_refresh_does_not_notify():
+    listings = [_listing(100, refreshed=T0 - timedelta(hours=1))]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PUSHUP),
+        listings,
+        seen={100},
+        last_pushups={100: None},
+        last_refreshes={100: T0},
+    )
+    assert finds == []
+
+
+def test_pushup_and_refresh_both_present_notify_only_once():
+    # Оба поля сдвинулись разом -- одно событие "pushup", не два.
+    listings = [_listing(100, pushed=T0 + timedelta(hours=1), refreshed=T0 + timedelta(hours=1))]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PUSHUP),
+        listings,
+        seen={100},
+        last_pushups={100: T0},
+        last_refreshes={100: T0},
+    )
+    assert len(finds) == 1
+    assert finds[0].reason == "pushup"
+
+
+def test_refresh_mode_respects_new_only_setting():
+    listings = [_listing(100, refreshed=T0 + timedelta(hours=1))]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW),
+        listings,
+        seen={100},
+        last_pushups={100: None},
+        last_refreshes={100: T0},
+    )
+    assert finds == []

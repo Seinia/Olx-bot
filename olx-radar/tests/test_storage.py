@@ -176,6 +176,44 @@ def test_init_db_migrates_a_pre_region_id_database(tmp_path):
     assert watch.filters.region_id == 21
 
 
+def test_init_db_migrates_a_pre_last_refresh_at_database(tmp_path, sample_listings):
+    # Та же миграция, что и для region_id выше, только для watch_seen.last_refresh_at
+    # (появилось вместе с детекцией автоподъёма по last_refresh_time).
+    path = tmp_path / "legacy2.db"
+    conn = sqlite3.connect(path)
+    try:
+        conn.executescript(
+            """
+            CREATE TABLE watches (
+                id INTEGER PRIMARY KEY, query TEXT NOT NULL, price_from INTEGER,
+                price_to INTEGER, city_id INTEGER, city_name TEXT, region_id INTEGER,
+                category_id INTEGER, state TEXT, owner_type TEXT,
+                stop_words TEXT NOT NULL DEFAULT '[]', poll_mode TEXT NOT NULL DEFAULT 'fast',
+                notify_mode TEXT NOT NULL DEFAULT 'new', enabled INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL, last_polled_at TEXT, last_found_at TEXT
+            );
+            CREATE TABLE watch_seen (
+                watch_id INTEGER NOT NULL, listing_id INTEGER NOT NULL,
+                first_seen_at TEXT NOT NULL, last_pushup_at TEXT, notified_at TEXT,
+                PRIMARY KEY (watch_id, listing_id)
+            );
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    storage.init_db(path)  # не должно упасть
+    storage.init_db(path)  # и повторный вызов тоже
+
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    listing = sample_listings[0]
+    storage.upsert_listing(listing)
+    storage.mark_seen(watch.id, dataclasses.replace(listing, refreshed_at=listing.created_at))
+
+    assert storage.last_refresh(watch.id, listing.id) == listing.created_at
+
+
 def test_stop_words_roundtrip_cyrillic(db_path):
     watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
     words = ["чохол", "запчастини", "б/у"]
@@ -324,6 +362,40 @@ def test_mark_seen_records_pushup_time(db_path, sample_listings):
     storage.mark_seen(watch.id, listing)
 
     assert storage.last_pushup(watch.id, listing.id) == listing.pushed_at
+
+
+def test_last_refresh_returns_none_when_never_seen(db_path):
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    assert storage.last_refresh(watch.id, 12345) is None
+
+
+def test_mark_seen_records_refresh_time(db_path, sample_listings):
+    # last_refresh_time -- отдельное от pushup_time поле OLX (см. monitor.py):
+    # платное продвижение с автоподъёмом двигает именно его, не pushup_time.
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    base = sample_listings[0]
+    when = base.created_at
+    listing = dataclasses.replace(base, refreshed_at=when)
+    storage.upsert_listing(listing)
+    storage.mark_seen(watch.id, listing)
+
+    assert storage.last_refresh(watch.id, listing.id) == when
+
+
+def test_mark_seen_does_not_let_refresh_time_go_backwards(db_path, sample_listings):
+    # Тот же защитный принцип, что и у pushup_time (S-07): отставший или пустой
+    # last_refresh_time с одного узла не должен затирать более свежий, уже записанный.
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    base = sample_listings[0]
+    later = dataclasses.replace(base, refreshed_at=base.created_at)
+    storage.upsert_listing(later)
+    storage.mark_seen(watch.id, later)
+
+    earlier = dataclasses.replace(base, refreshed_at=None)
+    storage.upsert_listing(earlier)
+    storage.mark_seen(watch.id, earlier)
+
+    assert storage.last_refresh(watch.id, base.id) == base.created_at
 
 
 def test_storage_error_before_init_db():

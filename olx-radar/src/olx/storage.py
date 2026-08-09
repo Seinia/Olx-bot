@@ -72,11 +72,12 @@ CREATE TABLE IF NOT EXISTS price_snapshots (
 CREATE INDEX IF NOT EXISTS idx_snap_listing ON price_snapshots(listing_id, seen_at);
 
 CREATE TABLE IF NOT EXISTS watch_seen (
-    watch_id       INTEGER NOT NULL REFERENCES watches(id) ON DELETE CASCADE,
-    listing_id     INTEGER NOT NULL REFERENCES listings(id),
-    first_seen_at  TEXT    NOT NULL,
-    last_pushup_at TEXT,
-    notified_at    TEXT,
+    watch_id        INTEGER NOT NULL REFERENCES watches(id) ON DELETE CASCADE,
+    listing_id      INTEGER NOT NULL REFERENCES listings(id),
+    first_seen_at   TEXT    NOT NULL,
+    last_pushup_at  TEXT,
+    last_refresh_at TEXT,
+    notified_at     TEXT,
     PRIMARY KEY (watch_id, listing_id)
 );
 """
@@ -98,6 +99,10 @@ def init_db(path: Path) -> None:
         # значит «колонка уже есть» -- это ожидаемо на каждом повторном запуске.
         try:
             conn.execute("ALTER TABLE watches ADD COLUMN region_id INTEGER")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE watch_seen ADD COLUMN last_refresh_at TEXT")
         except sqlite3.OperationalError:
             pass
         conn.commit()
@@ -321,27 +326,41 @@ def mark_seen(watch_id: int, listing: Listing) -> None:
     with _connection() as conn:
         now = datetime.now(UTC).isoformat()
         row = conn.execute(
-            "SELECT last_pushup_at FROM watch_seen WHERE watch_id = ? AND listing_id = ?",
+            "SELECT last_pushup_at, last_refresh_at FROM watch_seen "
+            "WHERE watch_id = ? AND listing_id = ?",
             (watch_id, listing.id),
         ).fetchone()
-        previous = _opt_datetime(row["last_pushup_at"]) if row is not None else None
+        previous_pushup = _opt_datetime(row["last_pushup_at"]) if row is not None else None
+        previous_refresh = _opt_datetime(row["last_refresh_at"]) if row is not None else None
 
-        # last_pushup_at может только расти: узел с отставшим или пустым pushup_time
-        # (S-07) затирал актуальное, и объявление уведомляло по кругу.
+        # last_pushup_at/last_refresh_at могут только расти: узел с отставшим или
+        # пустым значением (S-07) затирал актуальное, и объявление уведомляло по кругу.
         pushed = listing.pushed_at
-        if previous is not None and (pushed is None or pushed <= previous):
-            pushed = previous
+        if previous_pushup is not None and (pushed is None or pushed <= previous_pushup):
+            pushed = previous_pushup
+
+        refreshed = listing.refreshed_at
+        if previous_refresh is not None and (refreshed is None or refreshed <= previous_refresh):
+            refreshed = previous_refresh
 
         conn.execute(
             """
             INSERT INTO watch_seen
-                (watch_id, listing_id, first_seen_at, last_pushup_at, notified_at)
-            VALUES (?, ?, ?, ?, ?)
+                (watch_id, listing_id, first_seen_at, last_pushup_at, last_refresh_at, notified_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(watch_id, listing_id)
-                DO UPDATE SET last_pushup_at = excluded.last_pushup_at,
-                              notified_at    = excluded.notified_at
+                DO UPDATE SET last_pushup_at  = excluded.last_pushup_at,
+                              last_refresh_at = excluded.last_refresh_at,
+                              notified_at     = excluded.notified_at
             """,
-            (watch_id, listing.id, now, pushed.isoformat() if pushed else None, now),
+            (
+                watch_id,
+                listing.id,
+                now,
+                pushed.isoformat() if pushed else None,
+                refreshed.isoformat() if refreshed else None,
+                now,
+            ),
         )
         conn.commit()
 
@@ -363,6 +382,18 @@ def last_pushup(watch_id: int, listing_id: int) -> datetime | None:
     return _opt_datetime(row["last_pushup_at"]) if row is not None else None
 
 
+def last_refresh(watch_id: int, listing_id: int) -> datetime | None:
+    # last_refresh_time OLX -- отдельное от pushup_time поле (см. monitor.py):
+    # им двигает и платное продвижение с автоподъёмом, и не только ручное
+    # нажатие «Підняти».
+    with _connection() as conn:
+        row = conn.execute(
+            "SELECT last_refresh_at FROM watch_seen WHERE watch_id = ? AND listing_id = ?",
+            (watch_id, listing_id),
+        ).fetchone()
+    return _opt_datetime(row["last_refresh_at"]) if row is not None else None
+
+
 # Порядок и подписи полей выгрузки -- одни для CSV и JSON (контракты требуют только
 # "полезные поля", формат подписи не оговорён). Подписи русские: файл открывает
 # владелец, а не код.
@@ -377,7 +408,8 @@ _EXPORT_FIELDS: list[tuple[str, str]] = [
     ("owner_type", "Продавец"),
     ("created_at", "Опубликовано"),
     ("first_seen_at", "Впервые увидели"),
-    ("last_pushup_at", "Последний раз поднято")
+    ("last_pushup_at", "Последний раз поднято (вручную)"),
+    ("last_refresh_at", "Последнее обновление (в т.ч. автоподъём)"),
 ]
 
 # Та же подзапросная развязка id DESC, что и в record_price -- при опросе раз
@@ -394,7 +426,7 @@ def _export_rows(watch_id: int | None) -> list[dict[str, Any]]:
     if watch_id is not None:
         sql = f"""
             SELECT l.id, l.url, l.title, l.city_name, l.category_id, l.business, l.created_at,
-                   ws.first_seen_at, ws.last_pushup_at, p.price, p.currency
+                   ws.first_seen_at, ws.last_pushup_at, ws.last_refresh_at, p.price, p.currency
             FROM listings l
             JOIN watch_seen ws ON ws.listing_id = l.id AND ws.watch_id = ?
             LEFT JOIN price_snapshots p ON p.id = {_LATEST_PRICE_ID}
@@ -404,7 +436,8 @@ def _export_rows(watch_id: int | None) -> list[dict[str, Any]]:
     else:
         sql = f"""
             SELECT l.id, l.url, l.title, l.city_name, l.category_id, l.business, l.created_at,
-                   l.first_seen_at, NULL AS last_pushup_at, p.price, p.currency
+                   l.first_seen_at, NULL AS last_pushup_at, NULL AS last_refresh_at,
+                   p.price, p.currency
             FROM listings l
             LEFT JOIN price_snapshots p ON p.id = {_LATEST_PRICE_ID}
             ORDER BY l.id
@@ -424,7 +457,8 @@ def _export_rows(watch_id: int | None) -> list[dict[str, Any]]:
             "owner_type": "бизнес" if row["business"] else "частник",
             "created_at": row["created_at"],
             "first_seen_at": row["first_seen_at"],
-            "last_pushup_at": row["last_pushup_at"]
+            "last_pushup_at": row["last_pushup_at"],
+            "last_refresh_at": row["last_refresh_at"],
         }
         for row in rows
     ]
