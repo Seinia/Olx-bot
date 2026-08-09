@@ -38,7 +38,7 @@ def sent(monkeypatch):
     async def _alert(text):
         box["alerts"].append(text)
 
-    async def _listing(listing, w, *, reason):
+    async def _listing(listing, w, *, reason, old_price=None):
         box["listings"].append((listing.id, reason))
 
     monkeypatch.setattr(monitor.notify, "send_alert", _alert)

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import html
 import json
 import re
+import time
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Literal
@@ -28,6 +30,58 @@ MEDIA_GROUP_LIMIT = 10
 LATE_DETECTION_SECONDS = 3 * 3600
 
 _BR_TAG = re.compile(r"<br\s*/?>\s*", re.IGNORECASE)
+
+# Telegram официально держит ~1 сообщение в секунду на один чат и наказывает за
+# нарушение растущими паузами (виденный retry_after доходил до 500+ секунд). Запас
+# над формальным лимитом, потому что сетевой джиттер сам по себе может столкнуть
+# два вызова ближе секунды друг к другу.
+MIN_REQUEST_INTERVAL_SECONDS = 1.1
+
+# Общий на весь процесс, а не на одно объявление: без этого троттлинг внутри
+# одного send_listing (фоллбэк по фото при отказе sendMediaGroup) никак не защищал
+# от всплеска между РАЗНЫМИ объявлениями и запросами -- 429 ловился именно там.
+_rate_limit_lock = asyncio.Lock()
+_next_allowed_at = 0.0
+
+
+async def _throttle() -> None:
+    """Ждать перед следующим обращением к Telegram, чтобы не поймать 429."""
+    global _next_allowed_at
+    async with _rate_limit_lock:
+        now = time.monotonic()
+        wait = _next_allowed_at - now
+        if wait > 0:
+            await asyncio.sleep(wait)
+            now = time.monotonic()
+        _next_allowed_at = now + MIN_REQUEST_INTERVAL_SECONDS
+
+
+async def _postpone(seconds: float) -> None:
+    """Telegram попросил подождать -- следующий вызов _throttle() ждёт не меньше этого.
+
+    Не ретраим внутри самой функции: следующий, кто бы он ни был (следующее фото
+    этого объявления, следующая находка, следующий запрос), и так пройдёт через
+    _throttle() и упрётся в этот же дедлайн. Ретрай на месте только продлил бы
+    бан повторным 429, если Telegram уже недоволен всем ботом, а не одним вызовом.
+    """
+    global _next_allowed_at
+    async with _rate_limit_lock:
+        _next_allowed_at = max(_next_allowed_at, time.monotonic() + seconds)
+
+
+def _retry_after_seconds(response: httpx.Response) -> float:
+    header = response.headers.get("Retry-After")
+    if header is not None:
+        try:
+            return float(header)
+        except ValueError:
+            pass
+    try:
+        return float(response.json()["parameters"]["retry_after"])
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+        # Telegram обычно кладёт retry_after и в заголовок, и в тело -- если нет
+        # ни там, ни там, подстраховываемся консервативной паузой, не нулевой.
+        return 5.0
 
 
 class _DescriptionTextParser(HTMLParser):
@@ -103,7 +157,10 @@ def _age(moment: datetime, *, now: datetime | None = None) -> str:
 
 
 def _when_lines(
-    listing: Listing, reason: Literal["new", "pushup", "price_change"], *, now: datetime | None = None
+    listing: Listing,
+    reason: Literal["new", "pushup", "price_change"],
+    *,
+    now: datetime | None = None,
 ) -> list[str]:
     now = now or datetime.now(UTC)
     if reason == "new":
@@ -174,6 +231,10 @@ def _caption(
         f"📍 {city}",
         *_when_lines(listing, reason),
     ]
+    if listing.description.strip():
+        body += ["", html.escape(_short_description(listing.description))]
+    body += ["", f'<a href="{listing.url}">Открыть на OLX</a>']
+    return "\n".join(body)
 
 
 async def _send_photo(
@@ -182,10 +243,13 @@ async def _send_photo(
     data: dict[str, str | int] = {"chat_id": chat_id, "photo": photo_url}
     if caption is not None:
         data.update({"caption": caption, "parse_mode": "HTML"})
+    await _throttle()
     response = await client.post(
         _api_url("sendPhoto"),
         data=data,
     )
+    if response.status_code == 429:
+        await _postpone(_retry_after_seconds(response))
     return response.status_code == 200
 
 
@@ -195,18 +259,24 @@ async def _send_media_group(
     media: list[dict[str, str]] = [{"type": "photo", "media": url} for url in photo_urls]
     if caption is not None:
         media[0].update({"caption": caption, "parse_mode": "HTML"})
+    await _throttle()
     response = await client.post(
         _api_url("sendMediaGroup"),
         data={"chat_id": chat_id, "media": json.dumps(media, ensure_ascii=False)},
     )
+    if response.status_code == 429:
+        await _postpone(_retry_after_seconds(response))
     return response.status_code == 200
 
 
 async def _send_message(client: httpx.AsyncClient, chat_id: int, text: str) -> None:
+    await _throttle()
     response = await client.post(
         _api_url("sendMessage"),
         data={"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
     )
+    if response.status_code == 429:
+        await _postpone(_retry_after_seconds(response))
     if response.status_code != 200:
         raise NotifyError(
             f"Telegram sendMessage вернул {response.status_code}: {response.text[:300]}"

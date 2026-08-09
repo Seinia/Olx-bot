@@ -56,6 +56,88 @@ def _watch() -> Watch:
     )
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    # _next_allowed_at общий на модуль -- без сброса тест из одного файла мог бы
+    # унаследовать дедлайн ожидания от предыдущего и зависнуть на реальном sleep.
+    notify._next_allowed_at = 0.0
+    yield
+    notify._next_allowed_at = 0.0
+
+
+async def test_throttle_lets_the_first_call_through_immediately(monkeypatch):
+    monkeypatch.setattr(notify.time, "monotonic", lambda: 1000.0)
+    slept = []
+    monkeypatch.setattr(notify.asyncio, "sleep", _record_sleep(slept))
+
+    await notify._throttle()
+
+    assert slept == []
+
+
+async def test_throttle_waits_out_the_minimum_interval(monkeypatch):
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(notify.time, "monotonic", lambda: clock["t"])
+    slept = []
+
+    async def fake_sleep(seconds):
+        slept.append(seconds)
+        clock["t"] += seconds
+
+    monkeypatch.setattr(notify.asyncio, "sleep", fake_sleep)
+
+    await notify._throttle()
+    await notify._throttle()
+
+    # Между вызовами должно набежать не меньше MIN_REQUEST_INTERVAL_SECONDS --
+    # ровно то, что защищает от 429 при пачке фото одного объявления.
+    assert slept == [pytest.approx(notify.MIN_REQUEST_INTERVAL_SECONDS)]
+
+
+async def test_postpone_pushes_the_next_allowed_call_into_the_future(monkeypatch):
+    monkeypatch.setattr(notify.time, "monotonic", lambda: 1000.0)
+
+    await notify._postpone(537.0)
+
+    assert notify._next_allowed_at == pytest.approx(1537.0)
+
+
+async def test_postpone_never_moves_the_deadline_earlier(monkeypatch):
+    monkeypatch.setattr(notify.time, "monotonic", lambda: 1000.0)
+    await notify._postpone(500.0)
+
+    monkeypatch.setattr(notify.time, "monotonic", lambda: 1400.0)
+    await notify._postpone(10.0)  # 1400+10=1410, меньше уже выставленных 1500
+
+    assert notify._next_allowed_at == pytest.approx(1500.0)
+
+
+def test_retry_after_prefers_the_header_over_the_body():
+    response = httpx.Response(
+        429,
+        headers={"Retry-After": "537"},
+        json={"parameters": {"retry_after": 5}},
+    )
+    assert notify._retry_after_seconds(response) == 537.0
+
+
+def test_retry_after_falls_back_to_the_body_when_header_is_missing():
+    response = httpx.Response(429, json={"parameters": {"retry_after": 42}})
+    assert notify._retry_after_seconds(response) == 42.0
+
+
+def test_retry_after_defaults_to_a_safe_pause_when_nothing_is_parseable():
+    response = httpx.Response(429, content=b"not json")
+    assert notify._retry_after_seconds(response) == 5.0
+
+
+def _record_sleep(bucket: list):
+    async def _fake(seconds):
+        bucket.append(seconds)
+
+    return _fake
+
+
 @pytest.mark.telegram
 async def test_send_listing_delivers_via_send_photo():
     await asyncio.sleep(1)

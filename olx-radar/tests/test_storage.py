@@ -272,11 +272,16 @@ def test_upsert_listing_preserves_first_seen_at_on_conflict(db_path, sample_list
 def test_ac7_price_change_adds_second_snapshot(db_path, sample_listings):
     listing = sample_listings[0]
     storage.upsert_listing(listing)
-    assert storage.record_price(listing) is True
+    # Первая запись всегда возвращает None: старой цены ещё не было, сравнивать
+    # не с чем. Отличить «это первый снимок» от «цена не менялась» по одному
+    # только возврату нельзя -- в обоих случаях он None, это ожидаемая неоднозначность.
+    assert storage.record_price(listing) is None
 
     changed = dataclasses.replace(listing, price=(listing.price or 0) + 500)
     storage.upsert_listing(changed)
-    assert storage.record_price(changed) is True
+    # А вот при реальном изменении возвращается именно старая цена -- ей потом
+    # оперирует notify._caption() в подписи «было -> стало».
+    assert storage.record_price(changed) == listing.price
 
     assert _count_rows(db_path, "price_snapshots", listing_id=listing.id) == 2
 
@@ -284,8 +289,8 @@ def test_ac7_price_change_adds_second_snapshot(db_path, sample_listings):
 def test_ac7_unchanged_price_adds_no_second_snapshot(db_path, sample_listings):
     listing = sample_listings[0]
     storage.upsert_listing(listing)
-    assert storage.record_price(listing) is True
-    assert storage.record_price(listing) is False  # то же самое значение -- снимок не пишется
+    assert storage.record_price(listing) is None  # первый снимок
+    assert storage.record_price(listing) is None  # то же самое значение -- снимок не пишется
 
     assert _count_rows(db_path, "price_snapshots", listing_id=listing.id) == 1
 

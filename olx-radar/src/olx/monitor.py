@@ -33,7 +33,10 @@ def select_new_from(
     *,
     seen: set[int],
     last_pushups: Mapping[int, datetime | None],
-    price_changed: Mapping[int, int | None],
+    # Дефолт безопасен: функция только читает из price_changed (.get/in), никогда
+    # не мутирует. Без дефолта уже существующие вызовы (в т.ч. в тестах) ломались бы
+    # каждый раз, когда про изменение цены знать не нужно.
+    price_changed: Mapping[int, int | None] = {},
 ) -> list[Find]:
     finds: list[Find] = []
 
@@ -75,7 +78,7 @@ def select_new(
     watch: Watch,
     listings: list[Listing],
     *,
-    price_changed: Mapping[int, int | None],
+    price_changed: Mapping[int, int | None] = {},
 ) -> list[Find]:
     seen = storage.seen_ids(watch.id)
 
@@ -195,18 +198,18 @@ def poll_once(watch: Watch, *, proxy: str | None = None) -> list[Find]:
     # следить», а не «вижу впервые».
     seeding = watch.last_polled_at is None
 
-    # Сначала фиксируем текущие цены и запоминаем, у каких объявлений
-    # цена действительно изменилась.
+    # Цену фиксируем всегда, даже на посеве -- иначе у только что добавленного
+    # запроса price_snapshots пуст, и карточка объявления показывает пустую цену
+    # до следующего опроса (для full-режима это до 10 минут). А вот "было -> стало"
+    # в уведомлении осмысленно только после посева: на посеве всё видим впервые,
+    # сравнивать не с чем, и finds всё равно останутся пустыми.
     price_changed: dict[int, int | None] = {}
 
     for lst in listings:
         storage.upsert_listing(lst)
-
-        if not seeding:
-            old_price = storage.record_price(lst)
-
-            if old_price is not None:
-                price_changed[lst.id] = old_price
+        old_price = storage.record_price(lst)
+        if not seeding and old_price is not None:
+            price_changed[lst.id] = old_price
 
     if seeding:
         finds = []
