@@ -1,0 +1,21 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+*.egg-info
+
+# Подключаются через env_file на запуске: в слое образа токен остался бы навсегда.
+.env
+proxies.txt
+
+data/olx.db
+data/db
+data/exports
+data/*.log
+data/*.err
+docs
+tests
+deploy

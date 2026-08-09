@@ -1,0 +1,32 @@
+[Unit]
+Description=OLX Monitor - мониторинг olx.ua с уведомлениями в Telegram
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<user>
+WorkingDirectory=/home/<user>/olx-monitor
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/<user>/olx-monitor/.venv/bin/python -m olx
+
+Restart=always
+RestartSec=10
+# Без потолка systemd сдаётся после 5 перезапусков за 10 секунд и глушит сервис
+# насовсем. Для монитора, который живёт на чужом недокументированном API, это
+# худший исход: он умрёт молча и навсегда.
+StartLimitIntervalSec=0
+
+# Логи идут в journald: своя ротация не нужна, journald режет их сам по размеру.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=olx-monitor
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/<user>/olx-monitor/data
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,981 @@
+diff --git a/README.md b/README.md
+index b5b4bb1..b01c65f 100644
+--- a/README.md
++++ b/README.md
+@@ -10,9 +10,15 @@
+ 
+ ## Что умеет
+ 
+-- **Мониторинг с фильтрами** — цена, город, раздел, состояние, тип продавца. Все фильтры
+-  серверные, плюс стоп-слова на своей стороне: отсекают «на запчастини», «подобово»,
+-  «з iCloud» по заголовку.
++- **Два способа задать запрос.** Поисковая фраза, как на OLX, — или раздел целиком,
++  без фразы: например, «все легковые автомобили» без марки и модели. Во втором
++  случае мастер даёт пролистать дерево разделов OLX и остановиться на любом уровне
++  кнопкой «Весь этот раздел целиком».
++- **Мониторинг с фильтрами** — цена, город или область целиком, раздел, состояние,
++  тип продавца. Все фильтры серверные, плюс стоп-слова на своей стороне: отсекают
++  «на запчастини», «подобово», «з iCloud» по заголовку.
++- **Город или вся область.** Один конкретный город — или сразу вся область
++  («Львівська», «Одеська» и т.д.), без выбора между райцентрами вручную.
+ - **Два режима опроса.** `fast` — раз в 25 секунд, первая страница выдачи.
+   `full` — раз в 10 минут с полным обходом пагинации.
+ - **Два режима уведомлений.** Только новые или новые плюс переподнятые — когда продавец
+@@ -22,6 +28,31 @@
+ - **История цен.** Каждое изменение цены сохраняется; отчётов пока нет, данные копятся.
+ - **Выгрузка** находок в CSV или JSON.
+ 
++## Мастер /add
++
++Первый вопрос — «по фразе» или «по разделу, без фразы»:
++
++- **По фразе** — как раньше: вводите текст, мастер сам подскажет, в какие разделы
++  он попал, если их несколько.
++- **По разделу** — дерево категорий OLX с кнопками. На любом уровне можно нажать
++  «Весь этот раздел целиком» и не спускаться до конкретной марки/модели — тогда
++  отслеживаются все объявления раздела и всех его подразделов сразу (сравнение идёт
++  по поддереву `category_id`, а не по точному совпадению: у родительских разделов
++  вроде «Легкові автомобілі» своих объявлений нет, они лежат в марках-подкатегориях).
++
++Дальше на шаге города — обычный выбор одного города, свой вариант вручную, «вся
++Украина» — или «вся область»: вводите название («Львівська», «Одеська») и запрос
++будет отслеживать объявления по всей области, а не по одному городу.
++
++**Важно про `region_id`.** У OLX нет публичной документации на этот параметр
++поиска. Он выведен по аналогии с `city_id` из структуры ответа API (каждое
++объявление приходит с полным объектом `location.region`), но не проверен вживую —
++в этой сборке не было доступа к olx.ua для реального прогона. Если после
++обновления область не фильтрует объявления так, как ожидается, включите живые
++тесты (`OLX_LIVE_TESTS=1 pytest tests/test_api.py -k region -q`) и сверьтесь
++с реальным ответом API; при необходимости замените параметр в `api.py`
++(`build_search_url`) на тот, что реально фильтрует по региону.
++
+ ## Как это работает
+ 
+ ```
+@@ -114,7 +145,7 @@ python scripts/refresh_cities.py       # города из выдачи по ш
+ 
+ ```bash
+ .venv/bin/pip install -e ".[dev]"
+-pytest tests/ -q                       # 166 тестов, ~15 секунд
++pytest tests/ -q                       # 204 теста, ~10 секунд
+ ruff check src/ tests/ scripts/
+ ```
+ 
+diff --git a/src/olx/api.py b/src/olx/api.py
+index c9e570b..8ec248e 100644
+--- a/src/olx/api.py
++++ b/src/olx/api.py
+@@ -17,15 +17,23 @@ def build_search_url(query: str, filters: Filters, *, offset: int = 0, limit: in
+     params: dict[str, str | int] = {
+         "offset": offset,
+         "limit": limit,
+-        "query": query,
+         "sort_by": "created_at:desc",
+     }
++    # Пустая фраза -- режим «весь раздел»: параметр query вообще не уходит, а не
++    # уходит пустой строкой. С category_id и без query API отдаёт раздел целиком;
++    # с пустым query="" в проверках были расширенные, посторонние результаты.
++    if query:
++        params["query"] = query
+     if filters.price_from is not None:
+         params["filter_float_price:from"] = filters.price_from
+     if filters.price_to is not None:
+         params["filter_float_price:to"] = filters.price_to
+     if filters.city_id is not None:
+         params["city_id"] = filters.city_id
++    if filters.region_id is not None:
++        # city_id и region_id взаимоисключающие: OLX ищет по региону целиком, когда
++        # города нет, а city_id уже подразумевает конкретный регион сам по себе.
++        params["region_id"] = filters.region_id
+     if filters.category_id is not None:
+         params["category_id"] = filters.category_id
+     if filters.state is not None:
+@@ -55,6 +63,7 @@ def _has_constraints(filters: Filters) -> bool:
+             filters.price_from,
+             filters.price_to,
+             filters.city_id,
++            filters.region_id,
+             filters.category_id,
+             filters.state,
+             filters.owner_type,
+diff --git a/src/olx/bot.py b/src/olx/bot.py
+index 1ada4e5..0a1d870 100644
+--- a/src/olx/bot.py
++++ b/src/olx/bot.py
+@@ -32,11 +32,15 @@ router = Router()
+ 
+ 
+ class Add(StatesGroup):
++    mode = FSMState()
+     query = FSMState()
++    category_browse = FSMState()
+     price = FSMState()
+     category = FSMState()
+     city = FSMState()
+     city_input = FSMState()
++    region_input = FSMState()
++    region_pick = FSMState()
+     state = FSMState()
+     owner = FSMState()
+     stop_words = FSMState()
+@@ -83,6 +87,20 @@ async def _step(message: Message, state: FSMContext, title: str, body: str, **kw
+     await message.answer(texts.step(number, data.get("steps", 8), title, body), **kwargs)
+ 
+ 
++async def _step_same(
++    message: Message, state: FSMContext, title: str, body: str, **kwargs: Any
++) -> None:
++    """Вопрос того же шага мастера, счётчик не двигается.
++
++    Нужно для навигации по дереву категорий (Add.category_browse): дерево может
++    быть сколь угодно глубоким, и если бы каждый уровень занимал отдельный номер,
++    счётчик перегонял бы заявленный total уже на второй-третьей марке авто.
++    """
++    data = await state.get_data()
++    text = texts.step(data.get("step", 1), data.get("steps", 8), title, body)
++    await message.answer(text, **kwargs)
++
++
+ @router.message(CommandStart())
+ async def cmd_start(message: Message) -> None:
+     await message.answer(texts.START.format(commands=texts.COMMANDS))
+@@ -159,13 +177,14 @@ async def cmd_resume(message: Message) -> None:
+     parts = []
+     if resumed:
+         parts.append(
+-            "Возобновлены:\n" + "\n".join(f"• #{w.id} — {html.escape(w.query)}" for w in resumed)
++            "Возобновлены:\n"
++            + "\n".join(f"• #{w.id} — {html.escape(texts.watch_label(w))}" for w in resumed)
+         )
+     if broken:
+         parts.append(
+             "⚠️ Не включил — OLX всё ещё отдаёт форму, которую разбор не понимает "
+             "(похоже, из-за этого их и остановило):\n"
+-            + "\n".join(f"• #{w.id} — {html.escape(w.query)}" for w in broken)
++            + "\n".join(f"• #{w.id} — {html.escape(texts.watch_label(w))}" for w in broken)
+             + "\n\nВключить принудительно: /edit → «Пауза / возобновить» у нужного запроса."
+         )
+     await message.answer("\n\n".join(parts))
+@@ -173,16 +192,117 @@ async def cmd_resume(message: Message) -> None:
+ 
+ @router.message(Command("add"))
+ async def cmd_add(message: Message, state: FSMContext) -> None:
+-    await state.set_state(Add.query)
+-    await state.update_data(step=0, steps=8)
++    await state.set_state(Add.mode)
++    # База — 9 вопросов: способ поиска, фраза/раздел, цена, город, состояние,
++    # продавец, стоп-слова, режим опроса, режим уведомлений. Раздел из результатов
++    # поиска по фразе — необязательный десятый (см. add_query ниже).
++    await state.update_data(step=0, steps=9)
+     await _step(
+         message,
+         state,
+-        "Запрос",
+-        "Что ищем? Напишите поисковую фразу так, как вводили бы её на OLX.",
++        "Способ поиска",
++        "Как ищем — по поисковой фразе (как на OLX) или сразу по разделу целиком, "
++        "без фразы?",
++        reply_markup=_kb(
++            [
++                [("🔤 По фразе", "mode:phrase")],
++                [("📂 По разделу, без фразы", "mode:category")],
++            ]
++        ),
+     )
+ 
+ 
++@router.callback_query(Add.mode, F.data.startswith("mode:"))
++async def add_mode(call: CallbackQuery, state: FSMContext) -> None:
++    value = call.data.split(":", 1)[1]
++    if value == "phrase":
++        await call.message.edit_text("Способ: <b>по фразе</b>")
++        await state.set_state(Add.query)
++        await _step(
++            call.message,
++            state,
++            "Запрос",
++            "Что ищем? Напишите поисковую фразу так, как вводили бы её на OLX.",
++        )
++    else:
++        # query="" -- маркер режима «весь раздел»: build_search_url() тогда не шлёт
++        # параметр query вовсе, и работает чистый обход по category_id.
++        await state.update_data(query="")
++        await call.message.edit_text("Способ: <b>по разделу, без фразы</b>")
++        await state.set_state(Add.category_browse)
++        await _show_category_level(call.message, state, parent_id=None)
++    await call.answer()
++
++
++def _category_rows(parent_id: int | None) -> list[list[tuple[str, str]]]:
++    nodes = categories.children(parent_id)
++    rows = [[(n["name"], f"catb:{n['id']}")] for n in nodes]
++    if parent_id is not None:
++        rows.append([("✅ Весь этот раздел (со всеми подразделами)", f"catsel:{parent_id}")])
++        back_to = categories.parent_id(parent_id)
++        rows.append([("⬅️ Назад", f"catb:{back_to}" if back_to is not None else "catbroot")])
++    return rows
++
++
++async def _show_category_level(message: Message, state: FSMContext, parent_id: int | None) -> None:
++    nodes = categories.children(parent_id)
++    if not nodes and parent_id is not None:
++        # Лист дерева без подразделов -- дальше сворачивать некуда, выбираем сразу.
++        await _select_category(message, state, parent_id)
++        return
++
++    title = " › ".join(categories.path(parent_id)) if parent_id is not None else "Раздел"
++    body = f"{title}\n\nВыберите раздел или подраздел из списка."
++    data = await state.get_data()
++    kwargs = {"reply_markup": _kb(_category_rows(parent_id))}
++    if data.get("category_step_taken"):
++        # Уже заняли свой номер шага при первом входе в дерево -- дальнейшее
++        # погружение по подразделам его не двигает (см. _step_same).
++        await _step_same(message, state, "Раздел", body, **kwargs)
++    else:
++        await state.update_data(category_step_taken=True)
++        await _step(message, state, "Раздел", body, **kwargs)
++
++
++async def _select_category(message: Message, state: FSMContext, category_id: int) -> None:
++    await state.update_data(category_id=category_id)
++    chosen = " › ".join(categories.path(category_id)) or f"раздел #{category_id}"
++    await message.answer(f"Раздел: <b>{html.escape(chosen)}</b>")
++
++    # Без фразы пробный поиск идёт сразу с category_id -- иначе он потянет вообще
++    # весь каталог OLX, а не выбранный раздел (см. add_query -- там симметрично,
++    # только фильтр появляется после выбора раздела, а не до).
++    raw = await _preview(message, state, Filters(category_id=category_id))
++    if raw is None:
++        return
++    if not raw:
++        await message.answer("В этом разделе сейчас пусто на OLX. Начните заново: /add")
++        await state.clear()
++        return
++    await state.update_data(preview_prices=_prices_by_category(raw))
++    await _ask_price(message, state)
++
++
++@router.callback_query(Add.category_browse, F.data.startswith("catb:"))
++async def add_category_browse(call: CallbackQuery, state: FSMContext) -> None:
++    value = call.data.split(":", 1)[1]
++    await _show_category_level(call.message, state, parent_id=int(value))
++    await call.answer()
++
++
++@router.callback_query(Add.category_browse, F.data == "catbroot")
++async def add_category_browse_root(call: CallbackQuery, state: FSMContext) -> None:
++    await _show_category_level(call.message, state, parent_id=None)
++    await call.answer()
++
++
++@router.callback_query(Add.category_browse, F.data.startswith("catsel:"))
++async def add_category_select(call: CallbackQuery, state: FSMContext) -> None:
++    category_id = int(call.data.split(":", 1)[1])
++    await _select_category(call.message, state, category_id)
++    await call.answer()
++
++
+ async def _preview(message: Message, state: FSMContext, filters: Filters) -> list[dict] | None:
+     data = await state.get_data()
+     try:
+@@ -241,8 +361,10 @@ async def add_query(message: Message, state: FSMContext) -> None:
+         return
+ 
+     # Шаг с разделом появляется не всегда, поэтому общее число шагов известно
+-    # только здесь: без него счётчик показывал бы «8», а вопросов было бы девять.
+-    await state.update_data(steps=9)
++    # только здесь: без него счётчик показывал бы «9», а вопросов было бы десять.
++    # База — 9 (способ поиска, фраза, цена, город, состояние, продавец, стоп-слова,
++    # опрос, уведомления), этот шаг — десятый, поверх базы.
++    await state.update_data(steps=10)
+     rows = [[(categories.label(cid), f"cat:{cid}")] for cid, _, _ in found]
+     rows.append([("Все разделы сразу", "cat:any")])
+     await state.set_state(Add.category)
+@@ -272,7 +394,10 @@ async def add_category(call: CallbackQuery, state: FSMContext) -> None:
+ async def _ask_price(message: Message, state: FSMContext) -> None:
+     data = await state.get_data()
+     chosen = data.get("category_id")
+-    prices = [p for cat, p in data.get("preview_prices", []) if chosen is None or cat == chosen]
++    # Подраздел, а не точное совпадение: у «Легкові автомобілі» самого объявлений
++    # нет, они лежат в подразделах-марках (см. categories.descendant_ids).
++    wanted = categories.descendant_ids(chosen) if chosen is not None else None
++    prices = [p for cat, p in data.get("preview_prices", []) if wanted is None or cat in wanted]
+ 
+     rows = [
+         [(label, f"price:{low or ''}:{high or ''}")]
+@@ -353,6 +478,7 @@ async def _ask_city(message: Message, state: FSMContext, raw: list[dict]) -> Non
+     if majors:
+         rows += _pairs(majors)
+     rows.append([("✍️ Ввести свой город", "city:manual")])
++    rows.append([("🗺 Вся область (не один город)", "city:region")])
+     rows.append([("🌍 Вся Украина", "city:any")])
+ 
+     await state.set_state(Add.city)
+@@ -363,7 +489,8 @@ async def _ask_city(message: Message, state: FSMContext, raw: list[dict]) -> Non
+         message,
+         state,
+         "Город",
+-        "Сверху — города из выдачи, ниже — крупные. Или введите свой.",
++        "Сверху — города из выдачи, ниже — крупные. Или введите свой, либо отслеживайте "
++        "сразу всю область.",
+         reply_markup=_kb(rows),
+     )
+ 
+@@ -375,6 +502,15 @@ async def add_city_manual(call: CallbackQuery, state: FSMContext) -> None:
+     await call.answer()
+ 
+ 
++@router.callback_query(Add.city, F.data == "city:region")
++async def add_city_region(call: CallbackQuery, state: FSMContext) -> None:
++    await state.set_state(Add.region_input)
++    await call.message.edit_text(
++        "Введите область — например, «Львівська», «Одеська» или «Київська»."
++    )
++    await call.answer()
++
++
+ @router.message(Add.city_input)
+ async def add_city_typed(message: Message, state: FSMContext) -> None:
+     matches = geo.find_cities(message.text or "")
+@@ -394,15 +530,54 @@ async def add_city_typed(message: Message, state: FSMContext) -> None:
+     await message.answer("Нашлось несколько. Какой?", reply_markup=_kb(_pairs(matches)))
+ 
+ 
+-async def _after_city(message: Message, state: FSMContext, chosen: str) -> None:
++@router.message(Add.region_input)
++async def add_region_typed(message: Message, state: FSMContext) -> None:
++    matches = geo.find_regions(message.text or "")
++    if not matches:
++        await message.answer(
++            "Такой области в справочнике нет. Попробуйте иначе — например, «Львівська» "
++            "или просто «Львів»."
++        )
++        return
++    if len(matches) == 1:
++        rid, name = matches[0]
++        await state.update_data(region_id=rid)
++        await _after_region(message, state, name)
++        return
++
++    await state.set_state(Add.region_pick)
++    rows = [[(name, f"regsel:{rid}")] for rid, name in matches]
++    await message.answer("Нашлось несколько. Какая?", reply_markup=_kb(rows))
++
++
++@router.callback_query(Add.region_pick, F.data.startswith("regsel:"))
++async def add_region_pick(call: CallbackQuery, state: FSMContext) -> None:
++    rid = int(call.data.split(":", 1)[1])
++    name = geo.region_name(rid) or f"область #{rid}"
++    await state.update_data(region_id=rid)
++    await call.message.edit_text(f"Область: <b>{html.escape(name)}</b>")
++    await _goto_state_question(call.message, state)
++    await call.answer()
++
++
++async def _goto_state_question(message: Message, state: FSMContext) -> None:
+     await state.set_state(Add.state)
+-    await message.answer(f"Город: <b>{html.escape(chosen)}</b>")
+     await message.answer(
+         "Состояние товара?",
+         reply_markup=_kb([[("Новое", "st:new"), ("Б/у", "st:used"), ("Любое", "st:any")]]),
+     )
+ 
+ 
++async def _after_city(message: Message, state: FSMContext, chosen: str) -> None:
++    await message.answer(f"Город: <b>{html.escape(chosen)}</b>")
++    await _goto_state_question(message, state)
++
++
++async def _after_region(message: Message, state: FSMContext, chosen: str) -> None:
++    await message.answer(f"Область: <b>{html.escape(chosen)}</b>")
++    await _goto_state_question(message, state)
++
++
+ @router.callback_query(Add.city, F.data.startswith("city:"))
+ async def add_city(call: CallbackQuery, state: FSMContext) -> None:
+     value = call.data.split(":", 1)[1]
+@@ -412,12 +587,8 @@ async def add_city(call: CallbackQuery, state: FSMContext) -> None:
+         await state.update_data(city_id=int(value))
+         chosen = geo.city_name(int(value)) or f"город #{value}"
+ 
+-    await state.set_state(Add.state)
+     await call.message.edit_text(f"Город: <b>{html.escape(chosen)}</b>")
+-    await call.message.answer(
+-        "Состояние товара?",
+-        reply_markup=_kb([[("Новое", "st:new"), ("Б/у", "st:used"), ("Любое", "st:any")]]),
+-    )
++    await _goto_state_question(call.message, state)
+     await call.answer()
+ 
+ 
+@@ -493,6 +664,7 @@ async def add_notify_mode(call: CallbackQuery, state: FSMContext) -> None:
+         price_from=data.get("price_from"),
+         price_to=data.get("price_to"),
+         city_id=data.get("city_id"),
++        region_id=data.get("region_id"),
+         category_id=data.get("category_id"),
+         state=State(data["state"]) if data.get("state") else None,
+         owner_type=OwnerType(data["owner_type"]) if data.get("owner_type") else None,
+@@ -524,7 +696,7 @@ def _watch_picker(action: str) -> InlineKeyboardMarkup | None:
+     watches = storage.list_watches(enabled_only=False)
+     if not watches:
+         return None
+-    return _kb([[(f"#{w.id} — {w.query[:32]}", f"{action}:{w.id}")] for w in watches])
++    return _kb([[(f"#{w.id} — {texts.watch_label(w)}", f"{action}:{w.id}")] for w in watches])
+ 
+ 
+ @router.message(Command("del"))
+@@ -667,7 +839,7 @@ async def edit_stop_words_typed(message: Message, state: FSMContext) -> None:
+ @router.message(Command("export"))
+ async def cmd_export(message: Message) -> None:
+     watches = storage.list_watches(enabled_only=False)
+-    rows = [[(f"#{w.id} — {w.query[:32]}", f"exp:{w.id}")] for w in watches]
++    rows = [[(f"#{w.id} — {texts.watch_label(w)}", f"exp:{w.id}")] for w in watches]
+     rows.append([("Все объявления", "exp:all")])
+     await message.answer("Что выгружаем?", reply_markup=_kb(rows))
+ 
+diff --git a/src/olx/categories.py b/src/olx/categories.py
+index aa24556..8dc8437 100644
+--- a/src/olx/categories.py
++++ b/src/olx/categories.py
+@@ -52,6 +52,33 @@ def label(category_id: int) -> str:
+     return " › ".join(parts[-2:]) if len(parts) > 1 else parts[0]
+ 
+ 
++@lru_cache(maxsize=256)
++def descendant_ids(category_id: int) -> set[int]:
++    """category_id и все его потомки рекурсивно.
++
++    Нужно для режима «весь раздел»: «Легкові автомобілі» (108) сам объявлений не
++    содержит, они лежат в подразделах по маркам (BMW, Audi, ...). Точное совпадение
++    category_id тут отсекло бы всё до единого объявления.
++    """
++    tree = _tree()
++    out: set[int] = set()
++    stack = [category_id]
++    while stack:
++        cid = stack.pop()
++        if cid in out:
++            continue
++        out.add(cid)
++        node = tree.get(cid)
++        if node:
++            stack.extend(node.get("children") or [])
++    return out
++
++
++def parent_id(category_id: int) -> int | None:
++    node = _tree().get(category_id)
++    return node.get("parentId") if node else None
++
++
+ def children(category_id: int | None) -> list[dict]:
+     tree = _tree()
+     if category_id is None:
+diff --git a/src/olx/geo.py b/src/olx/geo.py
+index e445e4b..be11cb0 100644
+--- a/src/olx/geo.py
++++ b/src/olx/geo.py
+@@ -27,6 +27,41 @@ def city_name(city_id: int) -> str | None:
+     return city["name"] if city else None
+ 
+ 
++@lru_cache(maxsize=1)
++def _regions() -> dict[int, str]:
++    # Отдельного справочника областей нет -- region_id/region_name лежат прямо
++    # в каждой записи города (см. scripts/refresh_cities.py), собираем на лету.
++    out: dict[int, str] = {}
++    for city in _cities().values():
++        rid, rname = city.get("region_id"), city.get("region_name")
++        if rid is not None and rname:
++            out[rid] = rname
++    return out
++
++
++def region_name(region_id: int) -> str | None:
++    return _regions().get(region_id)
++
++
++def regions() -> list[tuple[int, str]]:
++    """Все области, отсортированы по названию."""
++    return sorted(_regions().items(), key=lambda r: r[1])
++
++
++def find_regions(text: str, *, limit: int = 8) -> list[tuple[int, str]]:
++    needle = text.strip().casefold()
++    if not needle:
++        return []
++    starts, contains = [], []
++    for rid, name in _regions().items():
++        folded = name.casefold()
++        if folded.startswith(needle):
++            starts.append((rid, name))
++        elif needle in folded:
++            contains.append((rid, name))
++    return (sorted(starts, key=lambda r: r[1]) + sorted(contains, key=lambda r: r[1]))[:limit]
++
++
+ def major_cities() -> list[tuple[int, str]]:
+     by_name = {c["name"]: c for c in _cities().values()}
+     return [(by_name[n]["id"], n) for n in MAJOR_CITY_NAMES if n in by_name]
+diff --git a/src/olx/models.py b/src/olx/models.py
+index 92e7ec6..ef5d3b0 100644
+--- a/src/olx/models.py
++++ b/src/olx/models.py
+@@ -64,6 +64,9 @@ class Filters:
+     price_from: int | None = None
+     price_to: int | None = None
+     city_id: int | None = None
++    # Вся область целиком, без привязки к конкретному городу. Взаимоисключающе
++    # с city_id: мастер /add не даёт задать оба сразу (см. bot.py, _ask_city).
++    region_id: int | None = None
+     # Различает подкатегории внутри одного поискового слова: «квартира» попадает
+     # и в продажу (1758), и в аренду (1760), и в услуги риелторов (186).
+     category_id: int | None = None
+@@ -74,6 +77,8 @@ class Filters:
+ @dataclass
+ class Watch:
+     id: int
++    # Пустая строка -- запрос без поисковой фразы, «весь раздел» целиком
++    # (filters.category_id тогда обязателен, см. wizard.py/bot.py).
+     query: str
+     filters: Filters
+     # Постфильтр: в API такого параметра нет, отсекаем у себя после разбора ответа.
+diff --git a/src/olx/notify.py b/src/olx/notify.py
+index 6db208b..476d48b 100644
+--- a/src/olx/notify.py
++++ b/src/olx/notify.py
+@@ -13,6 +13,7 @@ from loguru import logger
+ from olx.config import settings
+ from olx.errors import OlxError
+ from olx.models import Listing, Watch
++from olx.texts import watch_label
+ 
+ TELEGRAM_API = "https://api.telegram.org/bot{token}"
+ REQUEST_TIMEOUT = 30.0
+@@ -128,7 +129,7 @@ def _caption(listing: Listing, watch: Watch, *, reason: Literal["new", "pushup"]
+     # не наша разметка, экранируем перед вставкой в текст с parse_mode=HTML.
+     title = html.escape(listing.title)
+     city = html.escape(listing.city_name)
+-    query = html.escape(watch.query)
++    query = html.escape(watch_label(watch))
+     # Один и тот же listing может прийти по нескольким watch (дедуп в contracts.md
+     # намеренно попарный) -- без имени запроса непонятно, почему пришла карточка.
+     mark = {"new": "🆕 Новое", "pushup": "🔄 Переподнято"}[reason]
+diff --git a/src/olx/parse.py b/src/olx/parse.py
+index 9781180..62d00a8 100644
+--- a/src/olx/parse.py
++++ b/src/olx/parse.py
+@@ -3,6 +3,7 @@ from __future__ import annotations
+ from datetime import datetime
+ from typing import Any
+ 
++from olx import categories
+ from olx.errors import SchemaError
+ from olx.models import Filters, Listing, OwnerType, State
+ 
+@@ -112,8 +113,13 @@ def matches_filters(listing: Listing, filters: Filters) -> bool:
+         return False
+     if f.city_id is not None and listing.city_id != f.city_id:
+         return False
+-    if f.category_id is not None and listing.category_id != f.category_id:
++    if f.region_id is not None and listing.region_id != f.region_id:
+         return False
++    if f.category_id is not None:
++        # Не точное равенство: category_id мастера может быть родительским разделом
++        # («Легкові автомобілі»), сами объявления лежат в подразделах-марках.
++        if listing.category_id not in categories.descendant_ids(f.category_id):
++            return False
+     if f.state is not None and listing.state != f.state:
+         return False
+     if f.owner_type is not None:
+diff --git a/src/olx/storage.py b/src/olx/storage.py
+index c1f70de..c93e2d6 100644
+--- a/src/olx/storage.py
++++ b/src/olx/storage.py
+@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS watches (
+     price_to        INTEGER,
+     city_id         INTEGER,
+     city_name       TEXT,
++    region_id       INTEGER,
+     category_id     INTEGER,
+     state           TEXT,
+     owner_type      TEXT,
+@@ -92,6 +93,13 @@ def init_db(path: Path) -> None:
+     conn = sqlite3.connect(path)
+     try:
+         conn.executescript(_SCHEMA)
++        # Миграция для БД, созданных до появления region_id: CREATE TABLE IF NOT
++        # EXISTS новую колонку в старую таблицу не добавляет. OperationalError
++        # значит «колонка уже есть» -- это ожидаемо на каждом повторном запуске.
++        try:
++            conn.execute("ALTER TABLE watches ADD COLUMN region_id INTEGER")
++        except sqlite3.OperationalError:
++            pass
+         conn.commit()
+     finally:
+         conn.close()
+@@ -130,6 +138,7 @@ def _row_to_watch(row: sqlite3.Row) -> Watch:
+         price_from=row["price_from"],
+         price_to=row["price_to"],
+         city_id=row["city_id"],
++        region_id=row["region_id"],
+         category_id=row["category_id"],
+         state=State(row["state"]) if row["state"] else None,
+         owner_type=OwnerType(row["owner_type"]) if row["owner_type"] else None,
+@@ -155,15 +164,16 @@ def add_watch(query: str, filters: Filters, poll_mode: PollMode, notify_mode: No
+     with _connection() as conn:
+         cur = conn.execute(
+             """
+-            INSERT INTO watches (query, price_from, price_to, city_id, category_id, state,
+-                                  owner_type, poll_mode, notify_mode, created_at)
+-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
++            INSERT INTO watches (query, price_from, price_to, city_id, region_id, category_id,
++                                  state, owner_type, poll_mode, notify_mode, created_at)
++            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             """,
+             (
+                 query,
+                 filters.price_from,
+                 filters.price_to,
+                 filters.city_id,
++                filters.region_id,
+                 filters.category_id,
+                 filters.state.value if filters.state else None,
+                 filters.owner_type.value if filters.owner_type else None,
+@@ -196,7 +206,8 @@ def delete_watch(watch_id: int) -> None:
+ # Белый список защищает от произвольных имён колонок в динамическом UPDATE ниже --
+ # **fields идёт из вызывающего кода (бот), доверять именам ключей напрямую нельзя.
+ _WATCH_COLUMNS = {
+-    "query", "price_from", "price_to", "city_id", "city_name", "category_id", "state", "owner_type",
++    "query", "price_from", "price_to", "city_id", "city_name", "region_id", "category_id",
++    "state", "owner_type",
+     "stop_words", "poll_mode", "notify_mode", "enabled", "last_polled_at", "last_found_at",
+ }
+ 
+diff --git a/src/olx/texts.py b/src/olx/texts.py
+index 83a573d..60da88c 100644
+--- a/src/olx/texts.py
++++ b/src/olx/texts.py
+@@ -92,8 +92,21 @@ def _ago(moment: datetime | None) -> str:
+     return moment.strftime("%d.%m в %H:%M")
+ 
+ 
++def watch_label(watch: Watch) -> str:
++    """Короткая подпись запроса для кнопок и списков.
++
++    Пустая query -- режим «весь раздел без фразы» (см. models.Watch), подставляем
++    название раздела вместо пустой строки, иначе кнопка выглядела бы сломанной.
++    """
++    if watch.query:
++        return watch.query[:32]
++    if watch.filters.category_id is not None:
++        return "📂 " + categories.label(watch.filters.category_id)
++    return "весь OLX"
++
++
+ def watch_card(watch: Watch) -> str:
+-    lines = [f"<b>#{watch.id} · {html.escape(watch.query)}</b>"]
++    lines = [f"<b>#{watch.id} · {html.escape(watch_label(watch))}</b>"]
+ 
+     if watch.filters.category_id is not None:
+         lines.append(f"📂 {html.escape(categories.label(watch.filters.category_id))}")
+@@ -101,6 +114,9 @@ def watch_card(watch: Watch) -> str:
+     if watch.filters.city_id is not None:
+         city = geo.city_name(watch.filters.city_id) or f"город #{watch.filters.city_id}"
+         lines.append(f"📍 {html.escape(city)}")
++    elif watch.filters.region_id is not None:
++        region = geo.region_name(watch.filters.region_id) or f"область #{watch.filters.region_id}"
++        lines.append(f"🗺 {html.escape(region)}")
+     if watch.filters.state is not None:
+         lines.append(f"🏷 {'новое' if watch.filters.state == 'new' else 'б/у'}")
+     if watch.filters.owner_type is not None:
+diff --git a/tests/test_api.py b/tests/test_api.py
+index 5a0cc9c..ac94a62 100644
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -37,7 +37,17 @@ def test_build_search_url_maps_all_filters():
+     assert "private_business" not in qs
+ 
+ 
+-def test_search_url_sorts_by_newest():
++def test_build_search_url_omits_query_param_when_phrase_is_empty():
++    # Режим «весь раздел без фразы» (Watch.query == "") -- параметр query не должен
++    # уйти вовсе, пустая строка в query расширяла бы выдачу, а не сужала.
++    qs = parse_qs(urlparse(build_search_url("", Filters(category_id=108))).query)
++    assert "query" not in qs
++    assert qs["category_id"] == ["108"]
++
++
++def test_build_search_url_maps_region_id():
++    qs = parse_qs(urlparse(build_search_url(QUERY, Filters(region_id=21))).query)
++    assert qs["region_id"] == ["21"]
+     # Без сортировки свежее объявление попадает на первую страницу через 5-17 мин
+     # (S-08, замер по проду) и AC-4 проваливается. created_at:desc -- условие скорости.
+     qs = parse_qs(urlparse(build_search_url(QUERY, Filters())).query)
+diff --git a/tests/test_bot.py b/tests/test_bot.py
+index 07144bd..83a78ee 100644
+--- a/tests/test_bot.py
++++ b/tests/test_bot.py
+@@ -45,11 +45,55 @@ def test_bot_renders_cards_through_the_texts_module():
+     assert _fmt_watch is texts.watch_card
+ 
+ 
+-def test_wizard_step_totals_cover_the_optional_category_step():
+-    # Шаг с разделом появляется не всегда: 8 вопросов без него, 9 с ним. Если счётчик
+-    # разъедется, владелец увидит «Шаг 9 из 8».
++@pytest.mark.asyncio
++async def test_wizard_step_totals_cover_the_optional_category_step():
++    # Шаг с разделом появляется не всегда: 9 вопросов без него, 10 с ним. Если счётчик
++    # разъедется, владелец увидит «Шаг 9 из 9».
++    assert "Шаг 10 из 10" in texts.step(10, 10, "Уведомления", "тело")
+     assert "Шаг 9 из 9" in texts.step(9, 9, "Уведомления", "тело")
+-    assert "Шаг 8 из 8" in texts.step(8, 8, "Уведомления", "тело")
++
++
++@pytest.fixture
++def fsm_state():
++    from aiogram.fsm.context import FSMContext
++    from aiogram.fsm.storage.base import StorageKey
++    from aiogram.fsm.storage.memory import MemoryStorage
++
++    storage = MemoryStorage()
++    key = StorageKey(bot_id=1, chat_id=1, user_id=1)
++    return FSMContext(storage=storage, key=key)
++
++
++@pytest.mark.asyncio
++async def test_category_browsing_does_not_advance_the_step_counter_per_level(fsm_state):
++    # Дерево категорий может быть сколь угодно глубоким -- счётчик шага не должен
++    # расти с каждым уровнем погружения (иначе «Шаг 15 из 9» на третьей марке авто).
++    await fsm_state.update_data(step=1, steps=9)
++
++    msg = _FakeMessage()
++    await bot._show_category_level(msg, fsm_state, parent_id=None)  # корень дерева
++    assert "Шаг 2 из 9" in msg.sent[-1]
++
++    # Спускаемся на реальный подраздел ("Авто" -> "Легкові автомобілі" не лист --
++    # берём первый корневой раздел с детьми, чтобы не зависеть от точных id).
++    from olx import categories
++
++    root_with_children = next(
++        r for r in categories.children(None) if categories.children(r["id"])
++    )
++    msg2 = _FakeMessage()
++    await bot._show_category_level(msg2, fsm_state, parent_id=root_with_children["id"])
++    assert "Шаг 2 из 9" in msg2.sent[-1], "номер шага не должен был сдвинуться"
++
++
++@pytest.mark.asyncio
++async def test_add_mode_category_only_watch_has_empty_query(db):
++    # Полный путь storage.add_watch() для режима «раздел без фразы» уже покрыт
++    # storage-тестами; здесь проверяем именно то, что видит владелец в карточке.
++    watch = storage.add_watch("", Filters(category_id=108), PollMode.FAST, NotifyMode.NEW)
++    assert watch.query == ""
++    label = texts.watch_label(watch)
++    assert label and "Легков" in label
+ 
+ 
+ class _FakeMessage:
+diff --git a/tests/test_categories.py b/tests/test_categories.py
+index 73b2450..e5c99ad 100644
+--- a/tests/test_categories.py
++++ b/tests/test_categories.py
+@@ -57,6 +57,27 @@ def test_roots_and_children():
+     assert {"Продаж квартир", "Довгострокова оренда квартир"} <= kids
+ 
+ 
++def test_descendant_ids_includes_self_and_all_children():
++    # 108 -- «Легкові автомобілі», объявлений сам не содержит, они лежат в
++    # подразделах по маркам. Режим «весь раздел» без этого набора не находил бы ничего.
++    ids = categories.descendant_ids(108)
++    assert 108 in ids
++    assert len(ids) > 50  # десятки марок-подкатегорий
++
++
++def test_descendant_ids_of_a_leaf_is_just_itself():
++    assert categories.descendant_ids(1758) == {1758}
++
++
++def test_descendant_ids_of_unknown_id_is_just_itself():
++    assert categories.descendant_ids(99_999_999) == {99_999_999}
++
++
++def test_parent_id_walks_up_the_tree():
++    assert categories.parent_id(1760) is not None
++    assert categories.parent_id(99_999_999) is None
++
++
+ @pytest.mark.parametrize("category_id", [1, 1757, 1758, 1760, 85, 3276])
+ def test_every_path_is_bounded(category_id):
+     assert 0 < len(categories.path(category_id)) <= 6
+diff --git a/tests/test_filter_guard.py b/tests/test_filter_guard.py
+index e4927a2..409a3e9 100644
+--- a/tests/test_filter_guard.py
++++ b/tests/test_filter_guard.py
+@@ -55,6 +55,21 @@ def test_empty_filters_accept_everything(listings):
+     assert all(matches_filters(lst, Filters()) for lst in listings)
+ 
+ 
++def test_category_filter_matches_subtree_not_only_exact_id(listings):
++    # 963 -- «Acura», лист дерева под родителем 108 («Легкові автомобілі»). Родитель
++    # сам объявлений не содержит: режим «весь раздел» ищет по всему поддереву.
++    victim = listings[0]
++    child = type(victim)(**{**victim.__dict__, "category_id": 963})
++    assert matches_filters(child, Filters(category_id=108))
++    assert not matches_filters(child, Filters(category_id=222))  # соседний раздел
++
++
++def test_region_mismatch_rejected(listings):
++    lst = listings[0]
++    assert not matches_filters(lst, Filters(region_id=(lst.region_id or 0) + 1))
++    assert matches_filters(lst, Filters(region_id=lst.region_id))
++
++
+ def test_pagination_stops_when_page_is_all_padding(monkeypatch):
+     """OLX добивает исчерпанную выдачу посторонними объявлениями — обход обязан встать."""
+     raw = json.loads(SAMPLE.read_text(encoding="utf-8"))
+diff --git a/tests/test_geo.py b/tests/test_geo.py
+new file mode 100644
+index 0000000..3cf8f65
+--- /dev/null
++++ b/tests/test_geo.py
+@@ -0,0 +1,38 @@
++from olx import geo
++
++
++def test_regions_are_collected_from_the_cities_reference():
++    regions = geo.regions()
++    assert len(regions) > 10
++    names = {name for _, name in regions}
++    assert any("Львівська" in n for n in names)
++
++
++def test_region_name_resolves_known_id():
++    kyiv_city_id = 268
++    region_id = None
++    for cid, city in geo._cities().items():
++        if cid == kyiv_city_id:
++            region_id = city["region_id"]
++    assert region_id is not None
++    assert geo.region_name(region_id) is not None
++
++
++def test_region_name_unknown_id_returns_none():
++    assert geo.region_name(99_999_999) is None
++
++
++def test_find_regions_prefers_prefix_matches():
++    matches = geo.find_regions("Льв")
++    assert matches
++    assert any("Львівська" in name for _, name in matches)
++    # Совпадение с начала строки идёт первым -- тот же принцип, что у find_cities.
++    assert matches[0][1].casefold().startswith("льв")
++
++
++def test_find_regions_empty_query_returns_nothing():
++    assert geo.find_regions("") == []
++
++
++def test_find_regions_unknown_name_returns_nothing():
++    assert geo.find_regions("Zzzzzzzz") == []
+diff --git a/tests/test_storage.py b/tests/test_storage.py
+index e26c7e5..9d4148d 100644
+--- a/tests/test_storage.py
++++ b/tests/test_storage.py
+@@ -118,6 +118,64 @@ def test_update_watch_missing_id_raises(db_path):
+         storage.update_watch(999999, enabled=False)
+ 
+ 
++def test_watch_round_trips_region_id(db_path):
++    # Область целиком: city_id пуст, region_id задан -- Filters должен пережить
++    # запись/чтение из БД без искажений.
++    filters = Filters(category_id=108, region_id=21)
++    watch = storage.add_watch("", filters, PollMode.FAST, NotifyMode.NEW)
++    assert watch.filters.city_id is None
++    assert watch.filters.region_id == 21
++
++    [reloaded] = storage.list_watches(enabled_only=False)
++    assert reloaded.filters.region_id == 21
++
++
++def test_watch_with_empty_query_round_trips_as_category_only(db_path):
++    # Режим «весь раздел без фразы» (см. models.Watch) -- пустая строка, не NULL.
++    watch = storage.add_watch("", Filters(category_id=108), PollMode.FAST, NotifyMode.NEW)
++    assert watch.query == ""
++
++    [reloaded] = storage.list_watches(enabled_only=False)
++    assert reloaded.query == ""
++    assert reloaded.filters.category_id == 108
++
++
++def test_update_watch_can_set_region_id(db_path):
++    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
++    updated = storage.update_watch(watch.id, region_id=5)
++    assert updated.filters.region_id == 5
++
++
++def test_init_db_migrates_a_pre_region_id_database(tmp_path):
++    # БД, созданная до появления region_id, не должна падать при следующем
++    # запуске демона -- ALTER TABLE в init_db() обязан отработать один раз и молчать
++    # на повторных вызовах (OperationalError "duplicate column" — ожидаемо, не ошибка).
++    path = tmp_path / "legacy.db"
++    conn = sqlite3.connect(path)
++    try:
++        conn.executescript(
++            """
++            CREATE TABLE watches (
++                id INTEGER PRIMARY KEY, query TEXT NOT NULL, price_from INTEGER,
++                price_to INTEGER, city_id INTEGER, city_name TEXT, category_id INTEGER,
++                state TEXT, owner_type TEXT, stop_words TEXT NOT NULL DEFAULT '[]',
++                poll_mode TEXT NOT NULL DEFAULT 'fast', notify_mode TEXT NOT NULL DEFAULT 'new',
++                enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL,
++                last_polled_at TEXT, last_found_at TEXT
++            );
++            """
++        )
++        conn.commit()
++    finally:
++        conn.close()
++
++    storage.init_db(path)  # не должно упасть
++    storage.init_db(path)  # и повторный вызов тоже
++
++    watch = storage.add_watch("q", Filters(region_id=21), PollMode.FAST, NotifyMode.NEW)
++    assert watch.filters.region_id == 21
++
++
+ def test_stop_words_roundtrip_cyrillic(db_path):
+     watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+     words = ["чохол", "запчастини", "б/у"]
+diff --git a/tests/test_texts.py b/tests/test_texts.py
+index ea1fa76..b4e8ced 100644
+--- a/tests/test_texts.py
++++ b/tests/test_texts.py
+@@ -46,6 +46,25 @@ def test_card_omits_absent_filters():
+     assert "любая" in card
+ 
+ 
++def test_card_shows_region_when_no_specific_city_is_set():
++    card = texts.watch_card(_watch(filters=Filters(category_id=108, region_id=21)))
++    assert "🗺" in card
++    assert "📍" not in card
++
++
++def test_watch_label_falls_back_to_category_when_query_is_empty():
++    # Режим «весь раздел без фразы» -- пустая query не должна попасть в кнопку
++    # как есть: пустая подпись выглядит как сломанная кнопка.
++    watch = _watch(query="", filters=Filters(category_id=1760))
++    label = texts.watch_label(watch)
++    assert label
++    assert "оренда квартир" in label
++
++
++def test_watch_label_uses_query_when_present():
++    assert texts.watch_label(_watch(query="Квартира")) == "Квартира"
++
++
+ def test_price_formats():
+     assert "9 000 – 15 000 грн" in texts.watch_card(_watch())
+     assert "до 8 000 грн" in texts.watch_card(_watch(filters=Filters(price_to=8000)))

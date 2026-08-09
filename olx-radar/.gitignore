@@ -1,0 +1,35 @@
+# Секреты — никогда в репозиторий
+.env
+proxies.txt
+
+# Внутренняя документация процесса разработки: бриф, план, контракты, спайки,
+# аудит, лог решений. Остаётся локально. Образец ответа API, на котором стоят
+# тесты, живёт отдельно — в tests/fixtures/.
+docs/
+
+# Данные и БД. data/reference/*.json НЕ игнорируем -- это справочники категорий
+# и городов (scripts/refresh_*.py), код читает их в рантайме (categories.py, geo.py);
+# без них /add и /list падают на чистом клоне репозитория.
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.db-journal
+data/*.log
+data/*.err
+data/exports/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini

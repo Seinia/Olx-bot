@@ -1,0 +1,2956 @@
+{
+ "1": {
+  "id": 1,
+  "name": "Кам’янське",
+  "normalized_name": "kamenskoe",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "5": {
+  "id": 5,
+  "name": "Галич",
+  "normalized_name": "galich",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "9": {
+  "id": 9,
+  "name": "Ромни",
+  "normalized_name": "romny",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "11": {
+  "id": 11,
+  "name": "Вижниця",
+  "normalized_name": "vizhnitsa",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "12": {
+  "id": 12,
+  "name": "Ніжин",
+  "normalized_name": "nezhin",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "14": {
+  "id": 14,
+  "name": "Світловодськ",
+  "normalized_name": "svetlovodsk",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "17": {
+  "id": 17,
+  "name": "Гайсин",
+  "normalized_name": "gaysin",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "19": {
+  "id": 19,
+  "name": "Лохвиця",
+  "normalized_name": "lokhvitsa",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "20": {
+  "id": 20,
+  "name": "Чугуїв",
+  "normalized_name": "chuguev",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "22": {
+  "id": 22,
+  "name": "Вознесенськ",
+  "normalized_name": "voznesensk",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "25": {
+  "id": 25,
+  "name": "Дубно",
+  "normalized_name": "dubno",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "27": {
+  "id": 27,
+  "name": "Жовква",
+  "normalized_name": "zholkva",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "28": {
+  "id": 28,
+  "name": "Буча",
+  "normalized_name": "bucha",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "38": {
+  "id": 38,
+  "name": "Ладижин",
+  "normalized_name": "ladyzhin",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "43": {
+  "id": 43,
+  "name": "Вільнянськ",
+  "normalized_name": "volnyansk",
+  "region_id": 17,
+  "region_name": "Запорізька область"
+ },
+ "44": {
+  "id": 44,
+  "name": "Мена",
+  "normalized_name": "mena",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "46": {
+  "id": 46,
+  "name": "Переяслав",
+  "normalized_name": "pereyaslav-khmelnitskiy",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "47": {
+  "id": 47,
+  "name": "Суми",
+  "normalized_name": "sumy",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "48": {
+  "id": 48,
+  "name": "Боярка",
+  "normalized_name": "boyarka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "51": {
+  "id": 51,
+  "name": "Мерефа",
+  "normalized_name": "merefa",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "55": {
+  "id": 55,
+  "name": "Десна",
+  "normalized_name": "desna_55",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "58": {
+  "id": 58,
+  "name": "Могилів-Подільський",
+  "normalized_name": "mogilyev-podolskiy",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "60": {
+  "id": 60,
+  "name": "Біла Церква",
+  "normalized_name": "belayatserkov",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "61": {
+  "id": 61,
+  "name": "Херсон",
+  "normalized_name": "kherson",
+  "region_id": 3,
+  "region_name": "Херсонська область"
+ },
+ "62": {
+  "id": 62,
+  "name": "Одеса",
+  "normalized_name": "odessa",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "63": {
+  "id": 63,
+  "name": "Золочів",
+  "normalized_name": "zolochev",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "64": {
+  "id": 64,
+  "name": "Ковель",
+  "normalized_name": "kovel",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "68": {
+  "id": 68,
+  "name": "Умань",
+  "normalized_name": "uman",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "69": {
+  "id": 69,
+  "name": "Кропивницький",
+  "normalized_name": "kropivnitskiy",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "72": {
+  "id": 72,
+  "name": "Луцьк",
+  "normalized_name": "lutsk",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "74": {
+  "id": 74,
+  "name": "Борислав",
+  "normalized_name": "borislav",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "76": {
+  "id": 76,
+  "name": "Калуш",
+  "normalized_name": "kalush",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "80": {
+  "id": 80,
+  "name": "Люботин",
+  "normalized_name": "lyubotin",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "81": {
+  "id": 81,
+  "name": "Вишгород",
+  "normalized_name": "vyshgorod",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "82": {
+  "id": 82,
+  "name": "Лозова",
+  "normalized_name": "lozovaya",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "83": {
+  "id": 83,
+  "name": "Борщів",
+  "normalized_name": "borshchyev",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "84": {
+  "id": 84,
+  "name": "Бровари",
+  "normalized_name": "brovary",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "85": {
+  "id": 85,
+  "name": "Миколаїв",
+  "normalized_name": "nikolaev",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "95": {
+  "id": 95,
+  "name": "Миргород",
+  "normalized_name": "mirgorod",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "96": {
+  "id": 96,
+  "name": "Володимир",
+  "normalized_name": "vladimir-volynskiy",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "101": {
+  "id": 101,
+  "name": "Хмельницький",
+  "normalized_name": "khmelnitskiy",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "105": {
+  "id": 105,
+  "name": "Мала Виска",
+  "normalized_name": "malayaviska",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "106": {
+  "id": 106,
+  "name": "Миколаїв",
+  "normalized_name": "nikolaev_106",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "107": {
+  "id": 107,
+  "name": "Кам'янець-Подільський",
+  "normalized_name": "kamenets-podolskiy",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "110": {
+  "id": 110,
+  "name": "Трускавець",
+  "normalized_name": "truskavets",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "111": {
+  "id": 111,
+  "name": "Підгородне",
+  "normalized_name": "podgorodnoe",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "117": {
+  "id": 117,
+  "name": "Радомишль",
+  "normalized_name": "radomyshl",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "118": {
+  "id": 118,
+  "name": "Павлоград",
+  "normalized_name": "pavlograd",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "121": {
+  "id": 121,
+  "name": "Дніпро",
+  "normalized_name": "dnepr",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "122": {
+  "id": 122,
+  "name": "Жовті  Води",
+  "normalized_name": "zhyeltye-vody",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "124": {
+  "id": 124,
+  "name": "Рівне",
+  "normalized_name": "rovno",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "126": {
+  "id": 126,
+  "name": "Олександрія",
+  "normalized_name": "aleksandriya",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "128": {
+  "id": 128,
+  "name": "Самбір",
+  "normalized_name": "sambor",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "130": {
+  "id": 130,
+  "name": "Радехів",
+  "normalized_name": "radekhov",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "132": {
+  "id": 132,
+  "name": "Івано-Франківськ",
+  "normalized_name": "ivano-frankovsk",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "134": {
+  "id": 134,
+  "name": "Гайворон",
+  "normalized_name": "gayvoron",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "135": {
+  "id": 135,
+  "name": "Тараща",
+  "normalized_name": "tarashcha",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "137": {
+  "id": 137,
+  "name": "Калинівка",
+  "normalized_name": "kalinovka",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "145": {
+  "id": 145,
+  "name": "Черкаси",
+  "normalized_name": "cherkassy",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "146": {
+  "id": 146,
+  "name": "Березань",
+  "normalized_name": "berezan",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "153": {
+  "id": 153,
+  "name": "Шостка",
+  "normalized_name": "shostka",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "155": {
+  "id": 155,
+  "name": "Яворів",
+  "normalized_name": "yavorov",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "158": {
+  "id": 158,
+  "name": "Конотоп",
+  "normalized_name": "konotop",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "167": {
+  "id": 167,
+  "name": "Сторожинець",
+  "normalized_name": "storozhinets",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "171": {
+  "id": 171,
+  "name": "Карлівка",
+  "normalized_name": "karlovka",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "174": {
+  "id": 174,
+  "name": "Золотоноша",
+  "normalized_name": "zolotonosha",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "176": {
+  "id": 176,
+  "name": "Львів",
+  "normalized_name": "lvov",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "177": {
+  "id": 177,
+  "name": "Перемишляни",
+  "normalized_name": "peremyshlyane",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "178": {
+  "id": 178,
+  "name": "Чернігів",
+  "normalized_name": "chernigov",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "181": {
+  "id": 181,
+  "name": "Балта",
+  "normalized_name": "balta",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "183": {
+  "id": 183,
+  "name": "Тульчин",
+  "normalized_name": "tulchin",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "186": {
+  "id": 186,
+  "name": "Мукачево",
+  "normalized_name": "mukachevo",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "188": {
+  "id": 188,
+  "name": "Бобринець",
+  "normalized_name": "bobrinets",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "189": {
+  "id": 189,
+  "name": "Чортків",
+  "normalized_name": "chertkov",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "190": {
+  "id": 190,
+  "name": "Козятин",
+  "normalized_name": "kazatin",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "194": {
+  "id": 194,
+  "name": "Запоріжжя",
+  "normalized_name": "zaporozhe",
+  "region_id": 17,
+  "region_name": "Запорізька область"
+ },
+ "197": {
+  "id": 197,
+  "name": "Кагарлик",
+  "normalized_name": "kagarlyk",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "202": {
+  "id": 202,
+  "name": "Вараш",
+  "normalized_name": "varash",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "205": {
+  "id": 205,
+  "name": "Іршава",
+  "normalized_name": "irshava",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "206": {
+  "id": 206,
+  "name": "Лубни",
+  "normalized_name": "lubny",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "209": {
+  "id": 209,
+  "name": "Бершадь",
+  "normalized_name": "bershad",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "212": {
+  "id": 212,
+  "name": "Шахтарське",
+  "normalized_name": "pershotravensk",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "215": {
+  "id": 215,
+  "name": "Арциз",
+  "normalized_name": "artsiz",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "220": {
+  "id": 220,
+  "name": "Тячів",
+  "normalized_name": "tyachev",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "221": {
+  "id": 221,
+  "name": "Кременчук",
+  "normalized_name": "kremenchug",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "225": {
+  "id": 225,
+  "name": "Городище",
+  "normalized_name": "gorodishche",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "229": {
+  "id": 229,
+  "name": "Нікополь",
+  "normalized_name": "nikopol",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "231": {
+  "id": 231,
+  "name": "Камінь-Каширський",
+  "normalized_name": "kamen-kashirskiy",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "233": {
+  "id": 233,
+  "name": "Багачеве",
+  "normalized_name": "vatutino",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "236": {
+  "id": 236,
+  "name": "Свалява",
+  "normalized_name": "svalyava",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "237": {
+  "id": 237,
+  "name": "Немирів",
+  "normalized_name": "nemirov",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "238": {
+  "id": 238,
+  "name": "Коростень",
+  "normalized_name": "korosten",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "240": {
+  "id": 240,
+  "name": "Дрогобич",
+  "normalized_name": "drogobych",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "245": {
+  "id": 245,
+  "name": "Васильків",
+  "normalized_name": "vasilkov",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "246": {
+  "id": 246,
+  "name": "Слов'янськ",
+  "normalized_name": "slavyansk",
+  "region_id": 4,
+  "region_name": "Донецька область"
+ },
+ "247": {
+  "id": 247,
+  "name": "Ужгород",
+  "normalized_name": "uzhgorod",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "255": {
+  "id": 255,
+  "name": "Шепетівка",
+  "normalized_name": "shepetovka",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "257": {
+  "id": 257,
+  "name": "Ізяслав",
+  "normalized_name": "izyaslav",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "259": {
+  "id": 259,
+  "name": "Старокостянтинів",
+  "normalized_name": "starokonstantinov",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "262": {
+  "id": 262,
+  "name": "Городок",
+  "normalized_name": "gorodok_262",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "263": {
+  "id": 263,
+  "name": "Хирiв",
+  "normalized_name": "khyrov",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "264": {
+  "id": 264,
+  "name": "Виноградів",
+  "normalized_name": "vinogradov",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "265": {
+  "id": 265,
+  "name": "Українка",
+  "normalized_name": "ukrainka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "266": {
+  "id": 266,
+  "name": "Корець",
+  "normalized_name": "korets",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "268": {
+  "id": 268,
+  "name": "Київ",
+  "normalized_name": "kiev",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "270": {
+  "id": 270,
+  "name": "Березне",
+  "normalized_name": "berezne",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "273": {
+  "id": 273,
+  "name": "Теплодар",
+  "normalized_name": "teplodar",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "280": {
+  "id": 280,
+  "name": "Харків",
+  "normalized_name": "kharkov",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "281": {
+  "id": 281,
+  "name": "Теребовля",
+  "normalized_name": "terebovlya",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "282": {
+  "id": 282,
+  "name": "Горішні Плавні",
+  "normalized_name": "gorishnyye plavni",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "284": {
+  "id": 284,
+  "name": "Полтава",
+  "normalized_name": "poltava",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "287": {
+  "id": 287,
+  "name": "Славута",
+  "normalized_name": "slavuta",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "292": {
+  "id": 292,
+  "name": "Бар",
+  "normalized_name": "bar",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "293": {
+  "id": 293,
+  "name": "Синельникове",
+  "normalized_name": "sinelnikovo",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "294": {
+  "id": 294,
+  "name": "Південне",
+  "normalized_name": "yuzhnoe",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "295": {
+  "id": 295,
+  "name": "Ірпінь",
+  "normalized_name": "irpen",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "298": {
+  "id": 298,
+  "name": "Долина",
+  "normalized_name": "dolina",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "301": {
+  "id": 301,
+  "name": "Ржищів",
+  "normalized_name": "rzhishchev",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "302": {
+  "id": 302,
+  "name": "Дубляни",
+  "normalized_name": "dublyany",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "304": {
+  "id": 304,
+  "name": "Краматорськ",
+  "normalized_name": "kramatorsk",
+  "region_id": 4,
+  "region_name": "Донецька область"
+ },
+ "305": {
+  "id": 305,
+  "name": "Кодима",
+  "normalized_name": "kodyma",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "306": {
+  "id": 306,
+  "name": "Сміла",
+  "normalized_name": "smela",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "308": {
+  "id": 308,
+  "name": "Ізмаїл",
+  "normalized_name": "izmail",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "309": {
+  "id": 309,
+  "name": "Горохів",
+  "normalized_name": "gorokhov",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "313": {
+  "id": 313,
+  "name": "Вінниця",
+  "normalized_name": "vinnitsa",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "315": {
+  "id": 315,
+  "name": "Нововолинськ",
+  "normalized_name": "novovolynsk",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "316": {
+  "id": 316,
+  "name": "Самар",
+  "normalized_name": "novomoskovsk",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "318": {
+  "id": 318,
+  "name": "Бердичів",
+  "normalized_name": "berdichev",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "324": {
+  "id": 324,
+  "name": "Житомир",
+  "normalized_name": "zhitomir",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "327": {
+  "id": 327,
+  "name": "Надвірна",
+  "normalized_name": "nadvornaya",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "328": {
+  "id": 328,
+  "name": "Бориспіль",
+  "normalized_name": "borispol",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "331": {
+  "id": 331,
+  "name": "Чорноморськ",
+  "normalized_name": "ilichyevsk",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "332": {
+  "id": 332,
+  "name": "Пустомити",
+  "normalized_name": "pustomyty",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "333": {
+  "id": 333,
+  "name": "Коломия",
+  "normalized_name": "kolomyya",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "338": {
+  "id": 338,
+  "name": "Ізюм",
+  "normalized_name": "izyum",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "339": {
+  "id": 339,
+  "name": "Снігурівка",
+  "normalized_name": "snigirevka",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "340": {
+  "id": 340,
+  "name": "Кривий Ріг",
+  "normalized_name": "krivoyrog",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "341": {
+  "id": 341,
+  "name": "Сокиряни",
+  "normalized_name": "sokiryany",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "343": {
+  "id": 343,
+  "name": "Південноукраїнськ",
+  "normalized_name": "yuzhnoukrainsk",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "344": {
+  "id": 344,
+  "name": "Канів",
+  "normalized_name": "kanev",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "346": {
+  "id": 346,
+  "name": "Стрий",
+  "normalized_name": "stryy",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "347": {
+  "id": 347,
+  "name": "Великі Мости",
+  "normalized_name": "velikie-mosty",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "348": {
+  "id": 348,
+  "name": "Хмільник",
+  "normalized_name": "khmelnik",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "349": {
+  "id": 349,
+  "name": "Берестин",
+  "normalized_name": "krasnograd",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "352": {
+  "id": 352,
+  "name": "Подільськ",
+  "normalized_name": "kotovsk",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "355": {
+  "id": 355,
+  "name": "Шептицький",
+  "normalized_name": "chervonograd",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "356": {
+  "id": 356,
+  "name": "Сарни",
+  "normalized_name": "sarny",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "358": {
+  "id": 358,
+  "name": "Болград",
+  "normalized_name": "bolgrad",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "362": {
+  "id": 362,
+  "name": "Тернопіль",
+  "normalized_name": "ternopol",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "363": {
+  "id": 363,
+  "name": "Прилуки",
+  "normalized_name": "priluki",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "367": {
+  "id": 367,
+  "name": "Вільногірськ",
+  "normalized_name": "volnogorsk",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "369": {
+  "id": 369,
+  "name": "Чернівці",
+  "normalized_name": "chernovtsy",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "378": {
+  "id": 378,
+  "name": "Гадяч",
+  "normalized_name": "gadyach",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "396": {
+  "id": 396,
+  "name": "Рожище",
+  "normalized_name": "rozhishche",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "400": {
+  "id": 400,
+  "name": "Шпола",
+  "normalized_name": "shpola",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "401": {
+  "id": 401,
+  "name": "Костопіль",
+  "normalized_name": "kostopol",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "405": {
+  "id": 405,
+  "name": "Ланівці",
+  "normalized_name": "lanovtsy",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "406": {
+  "id": 406,
+  "name": "Глухів",
+  "normalized_name": "glukhov",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "435": {
+  "id": 435,
+  "name": "Гостомель",
+  "normalized_name": "gostomel",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "437": {
+  "id": 437,
+  "name": "Коцюбинське",
+  "normalized_name": "kotsyubinskoe",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "445": {
+  "id": 445,
+  "name": "Володарка",
+  "normalized_name": "volodarka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "457": {
+  "id": 457,
+  "name": "Черняхів",
+  "normalized_name": "chernyahov",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "459": {
+  "id": 459,
+  "name": "Романів",
+  "normalized_name": "romanov",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "463": {
+  "id": 463,
+  "name": "Іллінці",
+  "normalized_name": "ilintsy",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "477": {
+  "id": 477,
+  "name": "Великодолинське",
+  "normalized_name": "velikodolinskoe",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "481": {
+  "id": 481,
+  "name": "Роздільна",
+  "normalized_name": "razdelnaya",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "485": {
+  "id": 485,
+  "name": "Ширяєве",
+  "normalized_name": "shiryaevo",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "491": {
+  "id": 491,
+  "name": "Іваничі",
+  "normalized_name": "ivanichi",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "495": {
+  "id": 495,
+  "name": "Маневичі",
+  "normalized_name": "manevichi",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "519": {
+  "id": 519,
+  "name": "Буштино",
+  "normalized_name": "bushtyna",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "521": {
+  "id": 521,
+  "name": "Великий Бичків",
+  "normalized_name": "velikiy-bychkov",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "529": {
+  "id": 529,
+  "name": "Міжгір'я",
+  "normalized_name": "mezhgorye",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "539": {
+  "id": 539,
+  "name": "Богородчани",
+  "normalized_name": "bogorodchany",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "545": {
+  "id": 545,
+  "name": "Перегінське",
+  "normalized_name": "pereginskoye",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "571": {
+  "id": 571,
+  "name": "Кельменці",
+  "normalized_name": "kelmentsy",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "573": {
+  "id": 573,
+  "name": "Красноїльськ",
+  "normalized_name": "krasnoilsk",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "581": {
+  "id": 581,
+  "name": "Летичів",
+  "normalized_name": "letichev",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "607": {
+  "id": 607,
+  "name": "Високий",
+  "normalized_name": "vysokiy",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "625": {
+  "id": 625,
+  "name": "Хоростків",
+  "normalized_name": "khorostkov",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "653": {
+  "id": 653,
+  "name": "Котельва",
+  "normalized_name": "kotelva",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "667": {
+  "id": 667,
+  "name": "Арбузинка",
+  "normalized_name": "arbuzinka",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "679": {
+  "id": 679,
+  "name": "Казанка",
+  "normalized_name": "kazanka",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "695": {
+  "id": 695,
+  "name": "Глеваха",
+  "normalized_name": "glevaxa",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "763": {
+  "id": 763,
+  "name": "Крихівці",
+  "normalized_name": "krihovtsy",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "767": {
+  "id": 767,
+  "name": "Угорники",
+  "normalized_name": "ugorniki",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "999": {
+  "id": 999,
+  "name": "Бурштин",
+  "normalized_name": "burshtyn_999",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "1711": {
+  "id": 1711,
+  "name": "Косів",
+  "normalized_name": "kosov_1711",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "1725": {
+  "id": 1725,
+  "name": "Кути",
+  "normalized_name": "ugly",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "1821": {
+  "id": 1821,
+  "name": "Зелена",
+  "normalized_name": "zelenaya",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "2171": {
+  "id": 2171,
+  "name": "Рожнятів",
+  "normalized_name": "tarascha",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "2237": {
+  "id": 2237,
+  "name": "Зібранівка",
+  "normalized_name": "zibranovka",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "2563": {
+  "id": 2563,
+  "name": "Микуличин",
+  "normalized_name": "mikulichin",
+  "region_id": 13,
+  "region_name": "Івано-Франківська область"
+ },
+ "5853": {
+  "id": 5853,
+  "name": "Зарванці",
+  "normalized_name": "zarvantsy",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "5933": {
+  "id": 5933,
+  "name": "Якушинці",
+  "normalized_name": "yakushintsy",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "7147": {
+  "id": 7147,
+  "name": "Михайлівці",
+  "normalized_name": "mihaylovtsy",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "7559": {
+  "id": 7559,
+  "name": "Піщанка",
+  "normalized_name": "peschanka",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "7887": {
+  "id": 7887,
+  "name": "Красне",
+  "normalized_name": "krasnoe_7887",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "8095": {
+  "id": 8095,
+  "name": "Летківка",
+  "normalized_name": "letkovka",
+  "region_id": 24,
+  "region_name": "Вінницька область"
+ },
+ "9207": {
+  "id": 9207,
+  "name": "Підбереззя",
+  "normalized_name": "podbereze",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "9363": {
+  "id": 9363,
+  "name": "Небіжка",
+  "normalized_name": "nebezhka",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "9589": {
+  "id": 9589,
+  "name": "Вербка",
+  "normalized_name": "verbka_9589",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "9961": {
+  "id": 9961,
+  "name": "Богушівка",
+  "normalized_name": "bogushovka",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "9989": {
+  "id": 9989,
+  "name": "Воютин",
+  "normalized_name": "voyutin",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "10017": {
+  "id": 10017,
+  "name": "Зміїнець",
+  "normalized_name": "zmeenets",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "10077": {
+  "id": 10077,
+  "name": "Рованці",
+  "normalized_name": "rovantsy",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "10099": {
+  "id": 10099,
+  "name": "Тарасове",
+  "normalized_name": "tarasovo",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "10301": {
+  "id": 10301,
+  "name": "Любомль",
+  "normalized_name": "lyuboml_10301",
+  "region_id": 22,
+  "region_name": "Волинська область"
+ },
+ "11217": {
+  "id": 11217,
+  "name": "Запорізьке",
+  "normalized_name": "zaporozhskoe",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "11219": {
+  "id": 11219,
+  "name": "Зеленодольськ",
+  "normalized_name": "zelenodolsk",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "11661": {
+  "id": 11661,
+  "name": "Томаківка",
+  "normalized_name": "tomakovka",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "11969": {
+  "id": 11969,
+  "name": "Дослідне",
+  "normalized_name": "doslidnoe",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "11973": {
+  "id": 11973,
+  "name": "Зоря",
+  "normalized_name": "zarya_11973",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "12033": {
+  "id": 12033,
+  "name": "Степне",
+  "normalized_name": "stepnoe_12033",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "12053": {
+  "id": 12053,
+  "name": "Слобожанське",
+  "normalized_name": "yubileynoe",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "12279": {
+  "id": 12279,
+  "name": "Тернуватий Кут",
+  "normalized_name": "ternovatyy-kut",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "12317": {
+  "id": 12317,
+  "name": "Глеюватка",
+  "normalized_name": "gleevatka",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "12353": {
+  "id": 12353,
+  "name": "Кам'янське",
+  "normalized_name": "kamenskoe_12353",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "12423": {
+  "id": 12423,
+  "name": "Радушне",
+  "normalized_name": "radushnoe",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "12523": {
+  "id": 12523,
+  "name": "Гуляйполе",
+  "normalized_name": "gulyaypole_12523",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "13421": {
+  "id": 13421,
+  "name": "Богданівка",
+  "normalized_name": "bogdanovka_13421",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "13611": {
+  "id": 13611,
+  "name": "Курилівка",
+  "normalized_name": "kurilovka_13611",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "15017": {
+  "id": 15017,
+  "name": "Царичанка",
+  "normalized_name": "tsarichanka",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "15103": {
+  "id": 15103,
+  "name": "Нове життя",
+  "normalized_name": "novaya-zhizn_15103",
+  "region_id": 21,
+  "region_name": "Дніпропетровська область"
+ },
+ "18499": {
+  "id": 18499,
+  "name": "Олександрівка",
+  "normalized_name": "aleksandrovka_18499",
+  "region_id": 4,
+  "region_name": "Донецька область"
+ },
+ "18863": {
+  "id": 18863,
+  "name": "Прелесне",
+  "normalized_name": "prelestnoe",
+  "region_id": 4,
+  "region_name": "Донецька область"
+ },
+ "20321": {
+  "id": 20321,
+  "name": "Гришківці",
+  "normalized_name": "grishkovtsy",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "20421": {
+  "id": 20421,
+  "name": "Брусилів",
+  "normalized_name": "brusilov",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "20667": {
+  "id": 20667,
+  "name": "Довжик",
+  "normalized_name": "dovzhik",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "20723": {
+  "id": 20723,
+  "name": "Сонячне",
+  "normalized_name": "solnechnoe_20723",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "20919": {
+  "id": 20919,
+  "name": "Тетерівка",
+  "normalized_name": "teterevka",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "21625": {
+  "id": 21625,
+  "name": "Малин",
+  "normalized_name": "malin_21625",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "22019": {
+  "id": 22019,
+  "name": "Звягель",
+  "normalized_name": "novograd-volynskiy_22019",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "22429": {
+  "id": 22429,
+  "name": "Бучмани",
+  "normalized_name": "buchmany",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "22583": {
+  "id": 22583,
+  "name": "Королівка",
+  "normalized_name": "korolevka_22583",
+  "region_id": 6,
+  "region_name": "Житомирська область"
+ },
+ "23523": {
+  "id": 23523,
+  "name": "Довге",
+  "normalized_name": "dlinnye",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "23597": {
+  "id": 23597,
+  "name": "Берегове",
+  "normalized_name": "beregovo",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "23837": {
+  "id": 23837,
+  "name": "Підвиноградів",
+  "normalized_name": "podvinogradov",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "23853": {
+  "id": 23853,
+  "name": "Тросник",
+  "normalized_name": "trosnik",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "23885": {
+  "id": 23885,
+  "name": "Воловець",
+  "normalized_name": "volovets",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "24115": {
+  "id": 24115,
+  "name": "Коноплівці",
+  "normalized_name": "konoplivtsy",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "24269": {
+  "id": 24269,
+  "name": "Перечин",
+  "normalized_name": "perechin_24269",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "24429": {
+  "id": 24429,
+  "name": "Солочин",
+  "normalized_name": "solochin",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "24445": {
+  "id": 24445,
+  "name": "Бедевля",
+  "normalized_name": "bedevlya",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "24553": {
+  "id": 24553,
+  "name": "Тисалово",
+  "normalized_name": "tisalovo",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "24695": {
+  "id": 24695,
+  "name": "Оноківці",
+  "normalized_name": "onokovtsy",
+  "region_id": 10,
+  "region_name": "Закарпатська область"
+ },
+ "25851": {
+  "id": 25851,
+  "name": "Ростуче",
+  "normalized_name": "rastuschee_25851",
+  "region_id": 17,
+  "region_name": "Запорізька область"
+ },
+ "25859": {
+  "id": 25859,
+  "name": "Сонячне",
+  "normalized_name": "solnechnoe_25859",
+  "region_id": 17,
+  "region_name": "Запорізька область"
+ },
+ "27359": {
+  "id": 27359,
+  "name": "Іванівка",
+  "normalized_name": "ivanovka_27359",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "27617": {
+  "id": 27617,
+  "name": "Завалля",
+  "normalized_name": "zavale_27617",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "27989": {
+  "id": 27989,
+  "name": "Новошевченкове",
+  "normalized_name": "novoshevchenkovo",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "28331": {
+  "id": 28331,
+  "name": "Соколівське",
+  "normalized_name": "sokolovskoe",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "28575": {
+  "id": 28575,
+  "name": "Смоліне",
+  "normalized_name": "smolino_28575",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "28843": {
+  "id": 28843,
+  "name": "Новомиргород",
+  "normalized_name": "novomirgorod_28843",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "28867": {
+  "id": 28867,
+  "name": "Рівне",
+  "normalized_name": "rovno_28867",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "28993": {
+  "id": 28993,
+  "name": "Новоукраїнка",
+  "normalized_name": "novoukrainka",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "29123": {
+  "id": 29123,
+  "name": "Олександрівка",
+  "normalized_name": "aleksandrovka_29123",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "29201": {
+  "id": 29201,
+  "name": "Войнівка",
+  "normalized_name": "voynovka_29201",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "29283": {
+  "id": 29283,
+  "name": "Олександрівка",
+  "normalized_name": "aleksandrovka_29283",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "29513": {
+  "id": 29513,
+  "name": "Козацьке",
+  "normalized_name": "kazatskoe_29513",
+  "region_id": 7,
+  "region_name": "Кіровоградська область"
+ },
+ "30599": {
+  "id": 30599,
+  "name": "Ворзель",
+  "normalized_name": "vorzel",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "30995": {
+  "id": 30995,
+  "name": "Вишеньки",
+  "normalized_name": "vishenki_30995",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31005": {
+  "id": 31005,
+  "name": "Гора",
+  "normalized_name": "gora",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31055": {
+  "id": 31055,
+  "name": "Рогозів",
+  "normalized_name": "rogozov",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31151": {
+  "id": 31151,
+  "name": "Нове Залісся",
+  "normalized_name": "novoe-zalese",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31165": {
+  "id": 31165,
+  "name": "Пороскотень",
+  "normalized_name": "poroskoten",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31213": {
+  "id": 31213,
+  "name": "Заворичі",
+  "normalized_name": "zavorichi",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31215": {
+  "id": 31215,
+  "name": "Зазим'я",
+  "normalized_name": "zazime",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31265": {
+  "id": 31265,
+  "name": "Пухівка",
+  "normalized_name": "puhovka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31379": {
+  "id": 31379,
+  "name": "Калинівка",
+  "normalized_name": "kalinovka_31379",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31425": {
+  "id": 31425,
+  "name": "Плесецьке",
+  "normalized_name": "plesetskoe",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31525": {
+  "id": 31525,
+  "name": "Литвинівка",
+  "normalized_name": "litvinovka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31537": {
+  "id": 31537,
+  "name": "Нові Петрівці",
+  "normalized_name": "novye-petrovtsy",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31585": {
+  "id": 31585,
+  "name": "Хотянівка",
+  "normalized_name": "hotyanovka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31843": {
+  "id": 31843,
+  "name": "Стайки",
+  "normalized_name": "stayki",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31869": {
+  "id": 31869,
+  "name": "Білогородка",
+  "normalized_name": "belogorodka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31887": {
+  "id": 31887,
+  "name": "Бузова",
+  "normalized_name": "buzova_31887",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31893": {
+  "id": 31893,
+  "name": "Вишневе",
+  "normalized_name": "vishnevoe",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31899": {
+  "id": 31899,
+  "name": "Гатне",
+  "normalized_name": "gatnoe",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31923": {
+  "id": 31923,
+  "name": "Кременище",
+  "normalized_name": "kremenische",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31927": {
+  "id": 31927,
+  "name": "Крюківщина",
+  "normalized_name": "kryukovschina",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31929": {
+  "id": 31929,
+  "name": "Лісне",
+  "normalized_name": "lesnoe_31929",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31947": {
+  "id": 31947,
+  "name": "Мощун",
+  "normalized_name": "moschun",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31955": {
+  "id": 31955,
+  "name": "Нове",
+  "normalized_name": "novoe_31955",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31957": {
+  "id": 31957,
+  "name": "Святопетрівське",
+  "normalized_name": "petrovskoe_31957",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31961": {
+  "id": 31961,
+  "name": "Петрушки",
+  "normalized_name": "petrushki",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31963": {
+  "id": 31963,
+  "name": "Софіївська Борщагівка",
+  "normalized_name": "sofievskaya-borschagovka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31965": {
+  "id": 31965,
+  "name": "Стоянка",
+  "normalized_name": "stoyanka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31967": {
+  "id": 31967,
+  "name": "Тарасівка",
+  "normalized_name": "tarasovka_31967",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31979": {
+  "id": 31979,
+  "name": "Чайки",
+  "normalized_name": "chayki_31979",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31983": {
+  "id": 31983,
+  "name": "Шпитьки",
+  "normalized_name": "shpitki",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "31985": {
+  "id": 31985,
+  "name": "Юрівка",
+  "normalized_name": "yurovka_31985",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32053": {
+  "id": 32053,
+  "name": "Макарів",
+  "normalized_name": "makarov_32053",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32179": {
+  "id": 32179,
+  "name": "Миронівка",
+  "normalized_name": "mironovka_32179",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32257": {
+  "id": 32257,
+  "name": "Козин",
+  "normalized_name": "kozin_32257",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32287": {
+  "id": 32287,
+  "name": "Обухів",
+  "normalized_name": "obukhov",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32443": {
+  "id": 32443,
+  "name": "Хоцьки",
+  "normalized_name": "hotski",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32561": {
+  "id": 32561,
+  "name": "Синява",
+  "normalized_name": "serebryanoe_32561",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32581": {
+  "id": 32581,
+  "name": "Великополовецьке",
+  "normalized_name": "velikopolovetskoe",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32645": {
+  "id": 32645,
+  "name": "Сквира",
+  "normalized_name": "skvira_32645",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32657": {
+  "id": 32657,
+  "name": "Тхорівка",
+  "normalized_name": "thorovka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "32727": {
+  "id": 32727,
+  "name": "Ставище",
+  "normalized_name": "stavische_32727",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "33049": {
+  "id": 33049,
+  "name": "Ничипорівка",
+  "normalized_name": "nichiporovka",
+  "region_id": 25,
+  "region_name": "Київська область"
+ },
+ "36127": {
+  "id": 36127,
+  "name": "Східниця",
+  "normalized_name": "shodnitsa",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "36143": {
+  "id": 36143,
+  "name": "Броди",
+  "normalized_name": "brody_36143",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "36639": {
+  "id": 36639,
+  "name": "Нове Село",
+  "normalized_name": "novoe-selo_36639",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37073": {
+  "id": 37073,
+  "name": "Новосільці",
+  "normalized_name": "novoseltsy_37073",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37097": {
+  "id": 37097,
+  "name": "П'ятничани",
+  "normalized_name": "pyatnichany",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37135": {
+  "id": 37135,
+  "name": "Ходорів",
+  "normalized_name": "hodorov_37135",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37143": {
+  "id": 37143,
+  "name": "Ходорківці",
+  "normalized_name": "hodorkovtsy",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37287": {
+  "id": 37287,
+  "name": "Збиранка",
+  "normalized_name": "zbiranka",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37373": {
+  "id": 37373,
+  "name": "Малехів",
+  "normalized_name": "malehov",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37455": {
+  "id": 37455,
+  "name": "Сопошин",
+  "normalized_name": "soposhin",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37671": {
+  "id": 37671,
+  "name": "Скнилів",
+  "normalized_name": "sknilov",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37881": {
+  "id": 37881,
+  "name": "Брюховичі",
+  "normalized_name": "bryuhovichi",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "37885": {
+  "id": 37885,
+  "name": "Винники",
+  "normalized_name": "vinniki_37885",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "38009": {
+  "id": 38009,
+  "name": "Рудне",
+  "normalized_name": "rudnoe",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "38371": {
+  "id": 38371,
+  "name": "Шегині",
+  "normalized_name": "shegini",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "38595": {
+  "id": 38595,
+  "name": "Городиславичі",
+  "normalized_name": "gorodislavichi",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "38605": {
+  "id": 38605,
+  "name": "Давидів",
+  "normalized_name": "davidov",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "38633": {
+  "id": 38633,
+  "name": "Конопниця",
+  "normalized_name": "konopnitsa",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "38727": {
+  "id": 38727,
+  "name": "Сокільники",
+  "normalized_name": "sokolniki_38727",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "39221": {
+  "id": 39221,
+  "name": "Підгородці",
+  "normalized_name": "podgorodtsy",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "39771": {
+  "id": 39771,
+  "name": "Добряни",
+  "normalized_name": "dobryany_39771",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "39867": {
+  "id": 39867,
+  "name": "Стрий",
+  "normalized_name": "stryy_39867",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "40055": {
+  "id": 40055,
+  "name": "Гірник",
+  "normalized_name": "gornyak_40055",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "40259": {
+  "id": 40259,
+  "name": "Новояворівськ",
+  "normalized_name": "novoyavorovsk_40259",
+  "region_id": 5,
+  "region_name": "Львівська область"
+ },
+ "41469": {
+  "id": 41469,
+  "name": "Галицинове",
+  "normalized_name": "galitsinovo",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "41493": {
+  "id": 41493,
+  "name": "Каравелове",
+  "normalized_name": "karavellovo_41493",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "41517": {
+  "id": 41517,
+  "name": "Миколаївське",
+  "normalized_name": "nikolaevskoe",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "42305": {
+  "id": 42305,
+  "name": "Львів",
+  "normalized_name": "lvov_42305",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "42323": {
+  "id": 42323,
+  "name": "Первомайськ",
+  "normalized_name": "pervomaysk",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "42493": {
+  "id": 42493,
+  "name": "Тамарине",
+  "normalized_name": "tamarino",
+  "region_id": 19,
+  "region_name": "Миколаївська область"
+ },
+ "42721": {
+  "id": 42721,
+  "name": "Бурлача Балка",
+  "normalized_name": "burlachya-balka",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "43045": {
+  "id": 43045,
+  "name": "Біляївка",
+  "normalized_name": "belyaevka_43045",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "43069": {
+  "id": 43069,
+  "name": "Градениці",
+  "normalized_name": "gradenitsy",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "43643": {
+  "id": 43643,
+  "name": "Мирне",
+  "normalized_name": "mirnoe_43643",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "43795": {
+  "id": 43795,
+  "name": "Ліски",
+  "normalized_name": "leski_43795",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "43857": {
+  "id": 43857,
+  "name": "Фонтанка",
+  "normalized_name": "fontanka",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "43993": {
+  "id": 43993,
+  "name": "Станіславка",
+  "normalized_name": "stanislavka_43993",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "44353": {
+  "id": 44353,
+  "name": "Авангард",
+  "normalized_name": "avangard_44353",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "44371": {
+  "id": 44371,
+  "name": "Кароліно-Бугаз",
+  "normalized_name": "karolino-bugaz",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "44381": {
+  "id": 44381,
+  "name": "Молодіжне",
+  "normalized_name": "molodezhnoe_44381",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "44411": {
+  "id": 44411,
+  "name": "Лиманка",
+  "normalized_name": "limanka",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "44857": {
+  "id": 44857,
+  "name": "Дубинове",
+  "normalized_name": "dubinovo",
+  "region_id": 9,
+  "region_name": "Одеська область"
+ },
+ "45729": {
+  "id": 45729,
+  "name": "Петрівка-Роменська",
+  "normalized_name": "petrovka-romenskaya",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "46005": {
+  "id": 46005,
+  "name": "Гребінка",
+  "normalized_name": "grebenka",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "46081": {
+  "id": 46081,
+  "name": "Слободо-Петрівка",
+  "normalized_name": "slobodo-petrovka",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "46123": {
+  "id": 46123,
+  "name": "Диканька",
+  "normalized_name": "dikanka_46123",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "46285": {
+  "id": 46285,
+  "name": "Зіньків",
+  "normalized_name": "zenkov_46285",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "47217": {
+  "id": 47217,
+  "name": "Садки",
+  "normalized_name": "sadki_47217",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "47233": {
+  "id": 47233,
+  "name": "Чечелеве",
+  "normalized_name": "chechelevo",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "48383": {
+  "id": 48383,
+  "name": "Бочанівка",
+  "normalized_name": "bochanovka",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "48441": {
+  "id": 48441,
+  "name": "Горбанівка",
+  "normalized_name": "gorbanevka_48441",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "48877": {
+  "id": 48877,
+  "name": "Карпиха",
+  "normalized_name": "karpiha",
+  "region_id": 15,
+  "region_name": "Полтавська область"
+ },
+ "49561": {
+  "id": 49561,
+  "name": "Губків",
+  "normalized_name": "gubkov",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "49605": {
+  "id": 49605,
+  "name": "Прислуч",
+  "normalized_name": "prisluch",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "49613": {
+  "id": 49613,
+  "name": "Тишиця",
+  "normalized_name": "tishitsa_49613",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "49695": {
+  "id": 49695,
+  "name": "Кідри",
+  "normalized_name": "kidry",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "49839": {
+  "id": 49839,
+  "name": "Малинівка",
+  "normalized_name": "malinovka_49839",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "50021": {
+  "id": 50021,
+  "name": "Дядьковичі",
+  "normalized_name": "dyadkovichi",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "51113": {
+  "id": 51113,
+  "name": "Українка",
+  "normalized_name": "ukrainskaya_51113",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "51193": {
+  "id": 51193,
+  "name": "Біла Криниця",
+  "normalized_name": "belaya-krinitsa_51193",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "51469": {
+  "id": 51469,
+  "name": "Опарипси",
+  "normalized_name": "oparipsy",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "51563": {
+  "id": 51563,
+  "name": "Дубно",
+  "normalized_name": "dubno_51563",
+  "region_id": 14,
+  "region_name": "Рівненська область"
+ },
+ "52763": {
+  "id": 52763,
+  "name": "Попівка",
+  "normalized_name": "popovka_52763",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "53315": {
+  "id": 53315,
+  "name": "Лебедин",
+  "normalized_name": "lebedin_53315",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "53917": {
+  "id": 53917,
+  "name": "Кардашівка",
+  "normalized_name": "kardashovka_53917",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "54707": {
+  "id": 54707,
+  "name": "Суми",
+  "normalized_name": "sumy_54707",
+  "region_id": 1,
+  "region_name": "Сумська область"
+ },
+ "55785": {
+  "id": 55785,
+  "name": "Стінка",
+  "normalized_name": "stenka_55785",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "56165": {
+  "id": 56165,
+  "name": "Максимівка",
+  "normalized_name": "maksimovka_56165",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "56447": {
+  "id": 56447,
+  "name": "Вимислівка",
+  "normalized_name": "vymyslovka",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "56611": {
+  "id": 56611,
+  "name": "Кременець",
+  "normalized_name": "kremenets_56611",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "57141": {
+  "id": 57141,
+  "name": "Ілавче",
+  "normalized_name": "ilavche",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "57385": {
+  "id": 57385,
+  "name": "Великі Гаї",
+  "normalized_name": "velikie-gai",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "57399": {
+  "id": 57399,
+  "name": "Гаї-Гречинські",
+  "normalized_name": "gai-grechinskie",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "57453": {
+  "id": 57453,
+  "name": "Петриків",
+  "normalized_name": "petrikov_57453",
+  "region_id": 11,
+  "region_name": "Тернопільська область"
+ },
+ "57815": {
+  "id": 57815,
+  "name": "Олександрівка",
+  "normalized_name": "aleksandrovka_57815",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "57883": {
+  "id": 57883,
+  "name": "Балаклія",
+  "normalized_name": "balakleya",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "58419": {
+  "id": 58419,
+  "name": "Дзюби",
+  "normalized_name": "dzyuby",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "58665": {
+  "id": 58665,
+  "name": "Валки",
+  "normalized_name": "valki_58665",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "59415": {
+  "id": 59415,
+  "name": "Дергачі",
+  "normalized_name": "dergachi",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "59449": {
+  "id": 59449,
+  "name": "Котляри",
+  "normalized_name": "kommunar_59449",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "59455": {
+  "id": 59455,
+  "name": "Куряжанка",
+  "normalized_name": "kuryazhanka",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "59483": {
+  "id": 59483,
+  "name": "Пересічне",
+  "normalized_name": "obychnaya",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "59633": {
+  "id": 59633,
+  "name": "Безлюдівка",
+  "normalized_name": "bezlyudovka",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "59671": {
+  "id": 59671,
+  "name": "Донець",
+  "normalized_name": "donets",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "59737": {
+  "id": 59737,
+  "name": "Лиман",
+  "normalized_name": "liman_59737",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "60303": {
+  "id": 60303,
+  "name": "Краснокутськ",
+  "normalized_name": "krasnokutsk",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "60581": {
+  "id": 60581,
+  "name": "Інженерний",
+  "normalized_name": "inzhenernyy",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "60707": {
+  "id": 60707,
+  "name": "Олексіївка",
+  "normalized_name": "alekseevka_60707",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "61007": {
+  "id": 61007,
+  "name": "Златопіль",
+  "normalized_name": "pervomayskiy",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "61497": {
+  "id": 61497,
+  "name": "Горбані",
+  "normalized_name": "gorbani_61497",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "61537": {
+  "id": 61537,
+  "name": "Кулиничі",
+  "normalized_name": "kulinichi_61537",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "61567": {
+  "id": 61567,
+  "name": "Манченки",
+  "normalized_name": "manchenki",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "61623": {
+  "id": 61623,
+  "name": "Пісочин",
+  "normalized_name": "pesochin_61623",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "61751": {
+  "id": 61751,
+  "name": "Малинівка",
+  "normalized_name": "malinovka_61751",
+  "region_id": 8,
+  "region_name": "Харківська область"
+ },
+ "63337": {
+  "id": 63337,
+  "name": "Зеленівка",
+  "normalized_name": "zelenovka_63337",
+  "region_id": 3,
+  "region_name": "Херсонська область"
+ },
+ "63649": {
+  "id": 63649,
+  "name": "Дібровка",
+  "normalized_name": "dibrovka_63649",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "63959": {
+  "id": 63959,
+  "name": "Веселе",
+  "normalized_name": "veseloe_63959",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "64243": {
+  "id": 64243,
+  "name": "Городок",
+  "normalized_name": "gorodok_64243",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "64397": {
+  "id": 64397,
+  "name": "Деражня",
+  "normalized_name": "derazhnya_64397",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "64711": {
+  "id": 64711,
+  "name": "Гелетина",
+  "normalized_name": "geletina",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "65471": {
+  "id": 65471,
+  "name": "Понінка",
+  "normalized_name": "poninka_65471",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "66131": {
+  "id": 66131,
+  "name": "Колибань",
+  "normalized_name": "kolyban",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "66139": {
+  "id": 66139,
+  "name": "Лісові Гринівці",
+  "normalized_name": "lesnye-grinovtsy",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "66227": {
+  "id": 66227,
+  "name": "Шаровечка",
+  "normalized_name": "sharovechka",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "66541": {
+  "id": 66541,
+  "name": "Судилків",
+  "normalized_name": "sudilkov",
+  "region_id": 20,
+  "region_name": "Хмельницька область"
+ },
+ "67021": {
+  "id": 67021,
+  "name": "Звенигородка",
+  "normalized_name": "zvenigorodka",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "67371": {
+  "id": 67371,
+  "name": "Новоукраїнка",
+  "normalized_name": "novoukrainka_67371",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "67447": {
+  "id": 67447,
+  "name": "Калинопіль",
+  "normalized_name": "obuhov_67447",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "67487": {
+  "id": 67487,
+  "name": "Ромейкове",
+  "normalized_name": "romeykovo",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "67893": {
+  "id": 67893,
+  "name": "Мельниківка",
+  "normalized_name": "melnikovka",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "68327": {
+  "id": 68327,
+  "name": "Геронимівка",
+  "normalized_name": "geronimovka",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "68465": {
+  "id": 68465,
+  "name": "Чигирин",
+  "normalized_name": "chigirin",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "68491": {
+  "id": 68491,
+  "name": "Васютинці",
+  "normalized_name": "vasyutintsy_68491",
+  "region_id": 12,
+  "region_name": "Черкаська область"
+ },
+ "69041": {
+  "id": 69041,
+  "name": "Мамаївці",
+  "normalized_name": "mamaevtsy",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "69421": {
+  "id": 69421,
+  "name": "Годилів",
+  "normalized_name": "godilov",
+  "region_id": 18,
+  "region_name": "Чернівецька область"
+ },
+ "70015": {
+  "id": 70015,
+  "name": "Нова Басань",
+  "normalized_name": "novaya-basan",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "70481": {
+  "id": 70481,
+  "name": "Десна",
+  "normalized_name": "desna",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "71827": {
+  "id": 71827,
+  "name": "Тополя",
+  "normalized_name": "topol_71827",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "72221": {
+  "id": 72221,
+  "name": "Семенівка",
+  "normalized_name": "semenovka_72221",
+  "region_id": 23,
+  "region_name": "Чернігівська область"
+ },
+ "72952": {
+  "id": 72952,
+  "name": "Новосілки",
+  "normalized_name": "novosilky",
+  "region_id": 25,
+  "region_name": "Київська область"
+ }
+}

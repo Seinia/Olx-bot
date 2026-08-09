@@ -1,0 +1,19 @@
+services:
+  olx-monitor:
+    build: .
+    image: olx-radar:latest
+    container_name: olx-monitor
+    env_file: .env
+    environment:
+      DB_PATH: /app/data/db/olx.db
+    volumes:
+      # Каталог, а не файл: в WAL-режиме рядом создаются olx.db-wal и -shm.
+      - ./data/db:/app/data/db
+      - ./data/exports:/app/data/exports
+    restart: unless-stopped
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

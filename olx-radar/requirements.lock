@@ -1,0 +1,42 @@
+﻿# Полный слепок окружения, на котором проект проверен: 166 тестов зелёные.
+# Пересобирается вручную: pip list --format=freeze из рабочего venv.
+#
+# Главная строка здесь -- curl_cffi. Весь доступ к данным держится на одной её
+# способности подделывать TLS-отпечаток Chrome; смена поведения по умолчанию
+# убьёт мониторинг, а в логах это будет выглядеть как блокировка со стороны OLX.
+
+aiofiles==25.1.0
+aiogram==3.30.0
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.2
+aiosignal==1.4.0
+annotated-types==0.7.0
+anyio==4.14.2
+attrs==26.1.0
+certifi==2026.7.22
+cffi==2.1.0
+colorama==0.4.6
+curl_cffi==0.15.0
+frozenlist==1.8.0
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.18
+loguru==0.7.3
+magic-filter==1.0.12
+markdown-it-py==4.2.0
+mdurl==0.1.2
+multidict==6.7.1
+propcache==0.5.2
+pycparser==3.0
+pydantic_core==2.46.4
+pydantic==2.13.4
+pydantic-settings==2.14.2
+Pygments==2.20.0
+python-dotenv==1.2.2
+rich==15.0.0
+selectolax==0.4.11
+typing_extensions==4.16.0
+typing-inspection==0.4.2
+win32_setctime==1.2.0
+yarl==1.24.5
