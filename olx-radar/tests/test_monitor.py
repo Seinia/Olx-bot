@@ -99,12 +99,17 @@ def test_pushup_notifies_only_in_pushup_mode():
     assert [(f.listing.id, f.reason) for f in loud] == [(100, "pushup")]
 
 
-def test_pushup_without_recorded_baseline_notifies_once():
+def test_pushup_without_recorded_baseline_stays_silent_and_seeds_it():
+    # База отсутствует (None) -- НЕ уведомляем, просто запоминаем как отправную
+    # точку. Иначе любое новое отслеживаемое поле, добавленное к уже работающему
+    # боту, при первом опросе разом пометило бы «поднятым» весь бэклог (см.
+    # test_refresh_without_recorded_baseline_stays_silent ниже -- ровно этот
+    # сценарий произошёл на проде с last_refresh_at).
     listings = [_listing(100, pushed=T0)]
     finds = select_new_from(
         _watch(NotifyMode.NEW_PUSHUP), listings, seen={100}, last_pushups={100: None}
     )
-    assert [f.reason for f in finds] == ["pushup"]
+    assert finds == []
 
 
 def test_older_pushup_does_not_notify():
@@ -167,7 +172,11 @@ def test_refresh_without_pushup_still_notifies_as_pushup():
     assert [f.reason for f in finds] == ["pushup"]
 
 
-def test_refresh_without_recorded_baseline_notifies_once():
+def test_refresh_without_recorded_baseline_stays_silent_and_seeds_it():
+    # Прямое воспроизведение прод-инцидента: миграция добавила last_refresh_at,
+    # у уже отслеживаемых объявлений база была None -- и первый же опрос после
+    # обновления пометил чуть ли не весь бэклог как "поднято". Правильно --
+    # тихо запомнить значение сейчас, а уведомлять только о РОСТЕ относительно него.
     listings = [_listing(100, refreshed=T0)]
     finds = select_new_from(
         _watch(NotifyMode.NEW_PUSHUP),
@@ -176,7 +185,7 @@ def test_refresh_without_recorded_baseline_notifies_once():
         last_pushups={100: None},
         last_refreshes={100: None},
     )
-    assert [f.reason for f in finds] == ["pushup"]
+    assert finds == []
 
 
 def test_older_refresh_does_not_notify():

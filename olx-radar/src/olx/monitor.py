@@ -59,18 +59,21 @@ def select_new_from(
             continue
 
         # Объявление было поднято -- вручную (pushup_time) или автоматически
-        # платным продвижением (last_refresh_time). Любое из двух считается
-        # поднятием: продавца, готового платить за место в топе, найти хочется
-        # в обоих случаях одинаково.
+        # платным продвижением (last_refresh_time). Уведомляем только при РОСТЕ
+        # относительно уже сохранённой базы -- отсутствие базы (None) НЕ считается
+        # поднятием, тем же принципом, что и record_price() для цены. Иначе любое
+        # новое отслеживаемое поле (как last_refresh_at при этом самом апдейте)
+        # при первом опросе после миграции пометило бы «поднятым» весь бэклог уже
+        # отслеживаемых объявлений разом -- ровно то, что произошло на проде.
         pushed_up = False
         if listing.pushed_at is not None:
             previous_pushup = last_pushups.get(listing.id)
-            if previous_pushup is None or listing.pushed_at > previous_pushup:
+            if previous_pushup is not None and listing.pushed_at > previous_pushup:
                 pushed_up = True
 
         if not pushed_up and listing.refreshed_at is not None:
             previous_refresh = last_refreshes.get(listing.id)
-            if previous_refresh is None or listing.refreshed_at > previous_refresh:
+            if previous_refresh is not None and listing.refreshed_at > previous_refresh:
                 pushed_up = True
 
         if pushed_up:
