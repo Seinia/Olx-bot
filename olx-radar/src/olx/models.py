@@ -12,6 +12,7 @@ class PollMode(StrEnum):
 
 class NotifyMode(StrEnum):
     NEW = "new"
+    NEW_PRICE = "new_price"
     NEW_PUSHUP = "new_pushup"
 
 

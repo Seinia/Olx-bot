@@ -50,37 +50,58 @@ def select_new_from(
     for listing in listings:
         # Объявление раньше не встречалось этому watch.
         if listing.id not in seen:
-            if watch.created_at is None or listing.created_at >= watch.created_at:
+            is_freshly_created = watch.created_at is None or listing.created_at >= watch.created_at
+
+            if is_freshly_created:
                 finds.append(Find(listing, "new"))
+                continue
+
+            # Объявление старше самого запроса, но это не значит, что оно неинтересно:
+            # если его подняли или обновили уже ПОСЛЕ создания запроса, это тот же
+            # сигнал активности продавца, что и обычный pushup -- то, что мы
+            # встречаем объявление впервые именно сейчас, дела не меняет. Без этой
+            # ветки бот молчал бы про старые объявления, поднятые уже во время
+            # слежения, только потому что не видел их ДО подъёма.
+            if watch.notify_mode is NotifyMode.NEW_PUSHUP and watch.created_at is not None:
+                recently_pushed = (
+                    listing.pushed_at is not None and listing.pushed_at >= watch.created_at
+                )
+                recently_refreshed = (
+                    listing.refreshed_at is not None and listing.refreshed_at >= watch.created_at
+                )
+                if recently_pushed or recently_refreshed:
+                    finds.append(Find(listing, "pushup"))
             continue
 
-        # В режиме "только новые" уже известные объявления нас не интересуют.
-        if watch.notify_mode is not NotifyMode.NEW_PUSHUP:
+        # Уже известное объявление: что именно интересует, зависит от режима.
+        if watch.notify_mode is NotifyMode.NEW:
             continue
 
-        # Объявление было поднято -- вручную (pushup_time) или автоматически
-        # платным продвижением (last_refresh_time). Уведомляем только при РОСТЕ
-        # относительно уже сохранённой базы -- отсутствие базы (None) НЕ считается
-        # поднятием, тем же принципом, что и record_price() для цены. Иначе любое
-        # новое отслеживаемое поле (как last_refresh_at при этом самом апдейте)
-        # при первом опросе после миграции пометило бы «поднятым» весь бэклог уже
-        # отслеживаемых объявлений разом -- ровно то, что произошло на проде.
-        pushed_up = False
-        if listing.pushed_at is not None:
-            previous_pushup = last_pushups.get(listing.id)
-            if previous_pushup is not None and listing.pushed_at > previous_pushup:
-                pushed_up = True
+        if watch.notify_mode is NotifyMode.NEW_PUSHUP:
+            # Объявление было поднято -- вручную (pushup_time) или автоматически
+            # платным продвижением (last_refresh_time). Уведомляем только при РОСТЕ
+            # относительно уже сохранённой базы -- отсутствие базы (None) НЕ считается
+            # поднятием, тем же принципом, что и record_price() для цены. Иначе любое
+            # новое отслеживаемое поле (как last_refresh_at при этом самом апдейте)
+            # при первом опросе после миграции пометило бы «поднятым» весь бэклог уже
+            # отслеживаемых объявлений разом -- ровно то, что произошло на проде.
+            pushed_up = False
+            if listing.pushed_at is not None:
+                previous_pushup = last_pushups.get(listing.id)
+                if previous_pushup is not None and listing.pushed_at > previous_pushup:
+                    pushed_up = True
 
-        if not pushed_up and listing.refreshed_at is not None:
-            previous_refresh = last_refreshes.get(listing.id)
-            if previous_refresh is not None and listing.refreshed_at > previous_refresh:
-                pushed_up = True
+            if not pushed_up and listing.refreshed_at is not None:
+                previous_refresh = last_refreshes.get(listing.id)
+                if previous_refresh is not None and listing.refreshed_at > previous_refresh:
+                    pushed_up = True
 
-        if pushed_up:
-            finds.append(Find(listing, "pushup"))
-            continue
+            if pushed_up:
+                finds.append(Find(listing, "pushup"))
+                continue
 
-        # Цена изменилась.
+        # Цена изменилась -- интересно в обоих режимах, где уже известные
+        # объявления вообще рассматриваются (NEW_PRICE и NEW_PUSHUP).
         if listing.id in price_changed:
             finds.append(
                 Find(

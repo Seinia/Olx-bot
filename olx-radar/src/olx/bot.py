@@ -648,7 +648,11 @@ async def add_poll_mode(call: CallbackQuery, state: FSMContext) -> None:
     await call.message.answer(
         "О чём уведомлять?",
         reply_markup=_kb(
-            [[("Только новые", "nm:new")], [("Новые + переподнятые", "nm:new_pushup")]]
+            [
+                [("Только новые", "nm:new")],
+                [("Новые + изменение цены", "nm:new_price")],
+                [("Новые + переподнятые + цена", "nm:new_pushup")],
+            ]
         ),
     )
     await call.answer()
@@ -793,8 +797,13 @@ async def edit_field(call: CallbackQuery, state: FSMContext) -> None:
     elif field == "notify":
         await call.message.edit_text(
             "О чём уведомлять?",
-            reply_markup=_kb([[("Только новые", f"es:{watch_id}:notify_mode:new")],
-                              [("Новые + переподнятые", f"es:{watch_id}:notify_mode:new_pushup")]]),
+            reply_markup=_kb(
+                [
+                    [("Только новые", f"es:{watch_id}:notify_mode:new")],
+                    [("Новые + изменение цены", f"es:{watch_id}:notify_mode:new_price")],
+                    [("Новые + переподнятые + цена", f"es:{watch_id}:notify_mode:new_pushup")],
+                ]
+            ),
         )
     elif field == "toggle":
         watch = next(w for w in storage.list_watches(enabled_only=False) if w.id == watch_id)

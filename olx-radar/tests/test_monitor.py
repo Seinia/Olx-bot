@@ -78,6 +78,75 @@ def test_old_listing_pushed_after_watch_notifies_as_pushup():
     assert [(f.listing.id, f.reason) for f in finds] == [(100, "pushup")]
 
 
+# --- Живой случай: объявление старше запроса, ВПЕРВЫЕ встречено ботом уже ПОСЛЕ
+# того, как его подняли/обновили. Раньше при первой встрече код сразу делал
+# continue и молча заносил объявление в seen -- сигнал активности продавца
+# терялся навсегда, хотя формально произошёл уже во время слежения.
+
+
+def test_old_listing_first_seen_already_pushed_after_watch_notifies():
+    watch = Watch(
+        id=1,
+        query="iphone 13",
+        filters=Filters(),
+        notify_mode=NotifyMode.NEW_PUSHUP,
+        created_at=T0,
+    )
+    # Само объявление старше запроса, но подняли его уже ПОСЛЕ создания watch --
+    # и это первая встреча бота с этим объявлением вообще (не в seen).
+    old_but_pushed = _listing(
+        100, created=T0 - timedelta(days=130), pushed=T0 + timedelta(hours=1)
+    )
+
+    finds = select_new_from(watch, [old_but_pushed], seen=set(), last_pushups={})
+    assert [(f.listing.id, f.reason) for f in finds] == [(100, "pushup")]
+
+
+def test_old_listing_first_seen_already_refreshed_after_watch_notifies():
+    watch = Watch(
+        id=1,
+        query="iphone 13",
+        filters=Filters(),
+        notify_mode=NotifyMode.NEW_PUSHUP,
+        created_at=T0,
+    )
+    old_but_refreshed = _listing(
+        100, created=T0 - timedelta(days=130), refreshed=T0 + timedelta(hours=1)
+    )
+
+    finds = select_new_from(watch, [old_but_refreshed], seen=set(), last_pushups={})
+    assert [(f.listing.id, f.reason) for f in finds] == [(100, "pushup")]
+
+
+def test_old_listing_first_seen_pushed_before_watch_stays_silent():
+    # Подняли ДО того, как создали запрос -- это уже не "во время слежения",
+    # уведомлять не о чем (симметрично с test_old_listing_surfacing_is_not_notified).
+    watch = Watch(
+        id=1,
+        query="iphone 13",
+        filters=Filters(),
+        notify_mode=NotifyMode.NEW_PUSHUP,
+        created_at=T0,
+    )
+    old = _listing(100, created=T0 - timedelta(days=130), pushed=T0 - timedelta(hours=1))
+
+    finds = select_new_from(watch, [old], seen=set(), last_pushups={})
+    assert finds == []
+
+
+def test_old_listing_first_seen_activity_ignored_outside_pushup_mode():
+    # В режимах NEW и NEW_PRICE первая встреча со старым объявлением молчит,
+    # даже если его подняли уже во время слежения -- это специфично для new_pushup.
+    for mode in (NotifyMode.NEW, NotifyMode.NEW_PRICE):
+        watch = Watch(
+            id=1, query="iphone 13", filters=Filters(), notify_mode=mode, created_at=T0
+        )
+        old = _listing(100, created=T0 - timedelta(days=130), pushed=T0 + timedelta(hours=1))
+
+        finds = select_new_from(watch, [old], seen=set(), last_pushups={})
+        assert finds == [], f"режим {mode} не должен молчать"
+
+
 def test_seen_listing_is_silent_without_pushup():
     listings = [_listing(100, pushed=T0)]
     finds = select_new_from(
@@ -224,3 +293,67 @@ def test_refresh_mode_respects_new_only_setting():
         last_refreshes={100: T0},
     )
     assert finds == []
+
+
+# --- NEW_PRICE: только новые + изменение цены, без переподнятых. Промежуточный
+# режим между NEW (совсем тихий про уже известные) и NEW_PUSHUP (шлёт вообще всё).
+
+
+def test_price_change_notifies_in_new_price_mode():
+    listings = [_listing(100)]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PRICE),
+        listings,
+        seen={100},
+        last_pushups={},
+        price_changed={100: 9000},
+    )
+    assert [(f.listing.id, f.reason, f.old_price) for f in finds] == [(100, "price_change", 9000)]
+
+
+def test_price_change_notifies_in_new_pushup_mode_too():
+    listings = [_listing(100)]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PUSHUP),
+        listings,
+        seen={100},
+        last_pushups={},
+        price_changed={100: 9000},
+    )
+    assert [(f.listing.id, f.reason) for f in finds] == [(100, "price_change")]
+
+
+def test_price_change_silent_in_new_mode():
+    listings = [_listing(100)]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW), listings, seen={100}, last_pushups={}, price_changed={100: 9000}
+    )
+    assert finds == []
+
+
+def test_pushup_silent_in_new_price_mode_even_with_price_change():
+    # Поднятие в new_price не событие -- но если ЦЕНА при этом тоже изменилась,
+    # это по-прежнему должно уведомить как price_change, только не как pushup.
+    listings = [_listing(100, pushed=T0 + timedelta(hours=1))]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PRICE),
+        listings,
+        seen={100},
+        last_pushups={100: T0},
+        price_changed={100: 9000},
+    )
+    assert [(f.listing.id, f.reason) for f in finds] == [(100, "price_change")]
+
+
+def test_pushup_and_price_change_together_report_only_pushup_in_pushup_mode():
+    # В new_pushup поднятие "перекрывает" собой отдельное уведомление о цене той же
+    # находки -- как и раньше: pushed_up истинно -> continue -> цена не проверяется.
+    listings = [_listing(100, pushed=T0 + timedelta(hours=1))]
+    finds = select_new_from(
+        _watch(NotifyMode.NEW_PUSHUP),
+        listings,
+        seen={100},
+        last_pushups={100: T0},
+        price_changed={100: 9000},
+    )
+    assert [(f.listing.id, f.reason) for f in finds] == [(100, "pushup")]
