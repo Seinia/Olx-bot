@@ -10,6 +10,10 @@ from olx.models import Filters, NotifyMode, PollMode
 from olx.monitor import Poller
 from olx.parse import parse_listing
 
+# Тестовый Telegram user_id -- storage.add_watch() теперь мультипользовательский
+# и требует владельца; какой именно id, для большинства тестов не важно.
+USER = 999999
+
 SAMPLE = Path(__file__).resolve().parent / "fixtures" / "sample-response.json"
 NOW = datetime(2026, 8, 1, tzinfo=UTC)
 
@@ -55,7 +59,7 @@ def _prices(listing_id: int) -> list[int]:
 
 
 def test_purge_deletes_listing_gone_beyond_retention(db, sample):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     gone = parse_listing(sample[0])
     alive = parse_listing(sample[1])
     for lst in (gone, alive):
@@ -77,7 +81,7 @@ def test_purge_deletes_listing_gone_beyond_retention(db, sample):
 
 
 def test_purge_keeps_latest_price_snapshot_of_live_listing(db, sample):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     lst = parse_listing(sample[0])
     storage.upsert_listing(lst)
     storage.mark_seen(watch.id, lst)
@@ -95,7 +99,7 @@ def test_purge_keeps_latest_price_snapshot_of_live_listing(db, sample):
 
 
 def test_purge_is_noop_when_everything_is_recent(db, sample):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     lst = parse_listing(sample[0])
     storage.upsert_listing(lst)
     storage.record_price(lst)

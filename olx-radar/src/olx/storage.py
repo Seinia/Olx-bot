@@ -25,6 +25,10 @@ EXPORTS_DIR = Path(__file__).resolve().parents[2] / "data" / "exports"
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS watches (
     id              INTEGER PRIMARY KEY,
+    -- 0 -- сентинел "владелец ещё не назначен": реальные Telegram user_id всегда
+    -- положительные. Проставляется в init_db() при миграции существующей БД
+    -- (см. default_owner_id) и всегда явно при add_watch().
+    user_id         INTEGER NOT NULL DEFAULT 0,
     query           TEXT    NOT NULL,
     price_from      INTEGER,
     price_to        INTEGER,
@@ -87,7 +91,7 @@ CREATE TABLE IF NOT EXISTS watch_seen (
 _db_path: Path | None = None
 
 
-def init_db(path: Path) -> None:
+def init_db(path: Path, *, default_owner_id: int | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     global _db_path
     _db_path = path
@@ -105,6 +109,16 @@ def init_db(path: Path) -> None:
             conn.execute("ALTER TABLE watch_seen ADD COLUMN last_refresh_at TEXT")
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute("ALTER TABLE watches ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+        if default_owner_id is not None:
+            # Безусловно и на каждом старте, не только сразу после ALTER: сентинел
+            # 0 недостижим для настоящего Telegram user_id, так что это идемпотентно
+            # подчищает любые "ничьи" записи, а не только те, что осиротели именно
+            # в момент этой конкретной миграции.
+            conn.execute("UPDATE watches SET user_id = ? WHERE user_id = 0", (default_owner_id,))
         conn.commit()
     finally:
         conn.close()
@@ -159,21 +173,26 @@ def _row_to_watch(row: sqlite3.Row) -> Watch:
         created_at=datetime.fromisoformat(row["created_at"]),
         last_polled_at=_opt_datetime(row["last_polled_at"]),
         last_found_at=_opt_datetime(row["last_found_at"]),
+        user_id=row["user_id"],
     )
 
 
-def add_watch(query: str, filters: Filters, poll_mode: PollMode, notify_mode: NotifyMode) -> Watch:
+def add_watch(
+    query: str, filters: Filters, poll_mode: PollMode, notify_mode: NotifyMode, user_id: int
+) -> Watch:
     # stop_words и city_name сюда намеренно не входят: Filters их не несёт (контракты,
     # раздел Watch), а city_name сейчас некому заполнить -- город известен только по
     # id (S-05, открытый вопрос 1). Оба дополняются позже через update_watch().
     with _connection() as conn:
         cur = conn.execute(
             """
-            INSERT INTO watches (query, price_from, price_to, city_id, region_id, category_id,
-                                  state, owner_type, poll_mode, notify_mode, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO watches (user_id, query, price_from, price_to, city_id, region_id,
+                                  category_id, state, owner_type, poll_mode, notify_mode,
+                                  created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                user_id,
                 query,
                 filters.price_from,
                 filters.price_to,
@@ -192,19 +211,33 @@ def add_watch(query: str, filters: Filters, poll_mode: PollMode, notify_mode: No
     return _row_to_watch(row)
 
 
-def list_watches(*, enabled_only: bool = True) -> list[Watch]:
-    sql = "SELECT * FROM watches"
+def list_watches(*, user_id: int | None = None, enabled_only: bool = True) -> list[Watch]:
+    # user_id=None -- служебный обход для monitor.py (опрашивает вообще всех) и
+    # purge/бэкап-скриптов. Из bot.py всегда приходит id конкретного пользователя:
+    # без него один человек видел бы чужие запросы в /list, /edit, /del, /export.
+    conditions, params = [], []
     if enabled_only:
-        sql += " WHERE enabled = 1"
+        conditions.append("enabled = 1")
+    if user_id is not None:
+        conditions.append("user_id = ?")
+        params.append(user_id)
+    sql = "SELECT * FROM watches"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
     sql += " ORDER BY id"
     with _connection() as conn:
-        rows = conn.execute(sql).fetchall()
+        rows = conn.execute(sql, params).fetchall()
     return [_row_to_watch(row) for row in rows]
 
 
-def delete_watch(watch_id: int) -> None:
+def delete_watch(watch_id: int, *, user_id: int | None = None) -> None:
     with _connection() as conn:
-        conn.execute("DELETE FROM watches WHERE id = ?", (watch_id,))
+        if user_id is not None:
+            conn.execute(
+                "DELETE FROM watches WHERE id = ? AND user_id = ?", (watch_id, user_id)
+            )
+        else:
+            conn.execute("DELETE FROM watches WHERE id = ?", (watch_id,))
         conn.commit()
 
 
@@ -231,7 +264,7 @@ def _serialize_watch_field(name: str, value: Any) -> Any:
     return value
 
 
-def update_watch(watch_id: int, **fields: Any) -> Watch:
+def update_watch(watch_id: int, *, user_id: int | None = None, **fields: Any) -> Watch:
     unknown = set(fields) - _WATCH_COLUMNS
     if unknown:
         raise ValueError(f"update_watch: неизвестные поля {sorted(unknown)}")
@@ -239,9 +272,22 @@ def update_watch(watch_id: int, **fields: Any) -> Watch:
         if fields:
             assignments = ", ".join(f"{name} = ?" for name in fields)
             values = [_serialize_watch_field(name, value) for name, value in fields.items()]
-            conn.execute(f"UPDATE watches SET {assignments} WHERE id = ?", (*values, watch_id))
+            sql = f"UPDATE watches SET {assignments} WHERE id = ?"
+            params = [*values, watch_id]
+            if user_id is not None:
+                # Владельца намеренно нельзя поменять этим путём (его нет в
+                # _WATCH_COLUMNS) -- этот user_id только СУЖАЕТ, какую запись вообще
+                # можно тронуть, не позволяя редактировать чужой watch по его id.
+                sql += " AND user_id = ?"
+                params.append(user_id)
+            conn.execute(sql, params)
             conn.commit()
-        row = conn.execute("SELECT * FROM watches WHERE id = ?", (watch_id,)).fetchone()
+        sql = "SELECT * FROM watches WHERE id = ?"
+        params = [watch_id]
+        if user_id is not None:
+            sql += " AND user_id = ?"
+            params.append(user_id)
+        row = conn.execute(sql, params).fetchone()
     if row is None:
         raise ValueError(f"watch {watch_id} не найден")
     return _row_to_watch(row)
@@ -419,7 +465,7 @@ _LATEST_PRICE_ID = """
 """
 
 
-def _export_rows(watch_id: int | None) -> list[dict[str, Any]]:
+def _export_rows(watch_id: int | None, *, user_id: int | None = None) -> list[dict[str, Any]]:
     # watch_id задан -- берём watch_seen.first_seen_at: это "когда эту вещь увидел
     # именно этот запрос", а не listings.first_seen_at, который мог набежать раньше
     # от другого запроса на ту же вещь (дедуп в contracts.md намеренно попарный).
@@ -429,11 +475,36 @@ def _export_rows(watch_id: int | None) -> list[dict[str, Any]]:
                    ws.first_seen_at, ws.last_pushup_at, ws.last_refresh_at, p.price, p.currency
             FROM listings l
             JOIN watch_seen ws ON ws.listing_id = l.id AND ws.watch_id = ?
+            -- Без этого JOIN пользователь A мог бы выгрузить чужой watch_id B,
+            -- просто подставив его номер в expfmt:<id>:csv -- это же число,
+            -- ничем не защищённое, кроме того, что в UI показаны только свои.
+            JOIN watches w ON w.id = ws.watch_id AND (? IS NULL OR w.user_id = ?)
             LEFT JOIN price_snapshots p ON p.id = {_LATEST_PRICE_ID}
             ORDER BY l.id
         """
-        params: tuple[Any, ...] = (watch_id,)
+        params: tuple[Any, ...] = (watch_id, user_id, user_id)
+    elif user_id is not None:
+        # "Все объявления" для конкретного пользователя -- по всем ЕГО запросам, не
+        # по всей базе целиком (иначе это была бы утечка чужих находок). Один listing
+        # мог попасться в несколько его собственных watch -- берём самое раннее
+        # первое знакомство и самое позднее поднятие/обновление среди них.
+        sql = f"""
+            SELECT l.id, l.url, l.title, l.city_name, l.category_id, l.business, l.created_at,
+                   MIN(ws.first_seen_at) AS first_seen_at,
+                   MAX(ws.last_pushup_at) AS last_pushup_at,
+                   MAX(ws.last_refresh_at) AS last_refresh_at,
+                   p.price, p.currency
+            FROM listings l
+            JOIN watch_seen ws ON ws.listing_id = l.id
+            JOIN watches w ON w.id = ws.watch_id AND w.user_id = ?
+            LEFT JOIN price_snapshots p ON p.id = {_LATEST_PRICE_ID}
+            GROUP BY l.id
+            ORDER BY l.id
+        """
+        params = (user_id,)
     else:
+        # Только для служебных/однопользовательских вызовов (см. user_id=None
+        # в list_watches) -- буквально вся база, без разбора по watch.
         sql = f"""
             SELECT l.id, l.url, l.title, l.city_name, l.category_id, l.business, l.created_at,
                    l.first_seen_at, NULL AS last_pushup_at, NULL AS last_refresh_at,
@@ -480,8 +551,10 @@ def _write_json(path: Path, rows: list[dict[str, Any]]) -> None:
     path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def export(fmt: Literal["csv", "json"], watch_id: int | None = None) -> Path:
-    rows = _export_rows(watch_id)
+def export(
+    fmt: Literal["csv", "json"], watch_id: int | None = None, *, user_id: int | None = None
+) -> Path:
+    rows = _export_rows(watch_id, user_id=user_id)
     EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
     scope = f"watch{watch_id}" if watch_id is not None else "all"
     stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")

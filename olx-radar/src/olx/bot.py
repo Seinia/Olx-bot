@@ -57,7 +57,7 @@ def _kb(rows: list[list[tuple[str, str]]]) -> InlineKeyboardMarkup:
 
 
 class OwnerOnly(BaseMiddleware):
-    """Пропускает только владельца.
+    """Пропускает только тех, кто в списке разрешённых (settings.telegram_allowed_ids).
 
     Чужие сообщения отбрасываются молча: ответ вроде «доступ запрещён» подтверждает,
     что бот живой и чем-то занят, и превращает случайного прохожего в интересующегося.
@@ -70,7 +70,7 @@ class OwnerOnly(BaseMiddleware):
         data: dict[str, Any],
     ) -> Any:
         user = data.get("event_from_user")
-        if user is None or user.id != settings.telegram_owner_id:
+        if user is None or user.id not in settings.telegram_allowed_ids:
             logger.warning("Отброшено сообщение от чужого id={}", getattr(user, "id", "?"))
             return None
         return await handler(event, data)
@@ -115,22 +115,25 @@ async def cmd_help(message: Message) -> None:
 
 @router.message(Command("list"))
 async def cmd_list(message: Message) -> None:
-    await message.answer(texts.watch_list(storage.list_watches(enabled_only=False)))
+    await message.answer(
+        texts.watch_list(storage.list_watches(user_id=message.from_user.id, enabled_only=False))
+    )
 
 
 @router.message(Command("status"))
 async def cmd_status(message: Message) -> None:
     await message.answer(
         texts.status(
-            storage.list_watches(enabled_only=False), fast_interval=settings.poll_interval_fast
+            storage.list_watches(user_id=message.from_user.id, enabled_only=False),
+            fast_interval=settings.poll_interval_fast,
         )
     )
 
 
 @router.message(Command("pause"))
 async def cmd_pause(message: Message) -> None:
-    for w in storage.list_watches(enabled_only=True):
-        storage.update_watch(w.id, enabled=False)
+    for w in storage.list_watches(user_id=message.from_user.id, enabled_only=True):
+        storage.update_watch(w.id, user_id=message.from_user.id, enabled=False)
     await message.answer("Опрос приостановлен. Возобновить: /resume")
 
 
@@ -161,7 +164,10 @@ async def _still_broken(watch: Watch) -> bool:
 
 @router.message(Command("resume"))
 async def cmd_resume(message: Message) -> None:
-    paused = [w for w in storage.list_watches(enabled_only=False) if not w.enabled]
+    paused = [
+        w for w in storage.list_watches(user_id=message.from_user.id, enabled_only=False)
+        if not w.enabled
+    ]
     if not paused:
         await message.answer("Всё уже в работе.")
         return
@@ -172,7 +178,7 @@ async def cmd_resume(message: Message) -> None:
         (broken if await _still_broken(w) else resumed).append(w)
 
     for w in resumed:
-        storage.update_watch(w.id, enabled=True)
+        storage.update_watch(w.id, user_id=message.from_user.id, enabled=True)
 
     parts = []
     if resumed:
@@ -196,7 +202,7 @@ async def cmd_add(message: Message, state: FSMContext) -> None:
     # База — 9 вопросов: способ поиска, фраза/раздел, цена, город, состояние,
     # продавец, стоп-слова, режим опроса, режим уведомлений. Раздел из результатов
     # поиска по фразе — необязательный десятый (см. add_query ниже).
-    await state.update_data(step=0, steps=9)
+    await state.update_data(step=0, steps=9, user_id=message.from_user.id)
     await _step(
         message,
         state,
@@ -674,11 +680,18 @@ async def add_notify_mode(call: CallbackQuery, state: FSMContext) -> None:
         owner_type=OwnerType(data["owner_type"]) if data.get("owner_type") else None,
     )
     watch = storage.add_watch(
-        data["query"], filters, PollMode(data.get("poll_mode", "fast")), NotifyMode(notify_mode)
+        data["query"],
+        filters,
+        PollMode(data.get("poll_mode", "fast")),
+        NotifyMode(notify_mode),
+        user_id=data["user_id"],
     )
     if data.get("stop_words"):
-        storage.update_watch(watch.id, stop_words=data["stop_words"])
-        watch = next(w for w in storage.list_watches(enabled_only=False) if w.id == watch.id)
+        storage.update_watch(watch.id, user_id=data["user_id"], stop_words=data["stop_words"])
+        watch = next(
+            w for w in storage.list_watches(user_id=data["user_id"], enabled_only=False)
+            if w.id == watch.id
+        )
 
     await call.message.edit_text("Готово.")
     await call.message.answer("Запрос сохранён и уже в очереди опроса:\n\n" + _fmt_watch(watch))
@@ -696,8 +709,8 @@ class Edit(StatesGroup):
     stop_words = FSMState()
 
 
-def _watch_picker(action: str) -> InlineKeyboardMarkup | None:
-    watches = storage.list_watches(enabled_only=False)
+def _watch_picker(action: str, user_id: int) -> InlineKeyboardMarkup | None:
+    watches = storage.list_watches(user_id=user_id, enabled_only=False)
     if not watches:
         return None
     return _kb([[(f"#{w.id} — {texts.watch_label(w)}", f"{action}:{w.id}")] for w in watches])
@@ -705,7 +718,7 @@ def _watch_picker(action: str) -> InlineKeyboardMarkup | None:
 
 @router.message(Command("del"))
 async def cmd_del(message: Message) -> None:
-    kb = _watch_picker("delask")
+    kb = _watch_picker("delask", message.from_user.id)
     if kb is None:
         await message.answer("Удалять нечего — запросов нет.")
         return
@@ -715,7 +728,8 @@ async def cmd_del(message: Message) -> None:
 @router.callback_query(F.data.startswith("delask:"))
 async def del_confirm(call: CallbackQuery) -> None:
     watch_id = int(call.data.split(":")[1])
-    watch = next((w for w in storage.list_watches(enabled_only=False) if w.id == watch_id), None)
+    watches = storage.list_watches(user_id=call.from_user.id, enabled_only=False)
+    watch = next((w for w in watches if w.id == watch_id), None)
     if watch is None:
         await call.message.edit_text("Этот запрос уже удалён.")
         await call.answer()
@@ -730,7 +744,7 @@ async def del_confirm(call: CallbackQuery) -> None:
 
 @router.callback_query(F.data.startswith("delyes:"))
 async def del_do(call: CallbackQuery) -> None:
-    storage.delete_watch(int(call.data.split(":")[1]))
+    storage.delete_watch(int(call.data.split(":")[1]), user_id=call.from_user.id)
     await call.message.edit_text("Запрос удалён.")
     await call.answer()
 
@@ -743,7 +757,7 @@ async def del_cancel(call: CallbackQuery) -> None:
 
 @router.message(Command("edit"))
 async def cmd_edit(message: Message) -> None:
-    kb = _watch_picker("edit")
+    kb = _watch_picker("edit", message.from_user.id)
     if kb is None:
         await message.answer("Менять нечего — запросов нет. Создать: /add")
         return
@@ -775,7 +789,7 @@ async def edit_menu(call: CallbackQuery) -> None:
 async def edit_field(call: CallbackQuery, state: FSMContext) -> None:
     _, raw_id, field = call.data.split(":")
     watch_id = int(raw_id)
-    await state.update_data(edit_watch_id=watch_id)
+    await state.update_data(edit_watch_id=watch_id, user_id=call.from_user.id)
 
     if field == "price":
         await state.set_state(Edit.price)
@@ -806,8 +820,9 @@ async def edit_field(call: CallbackQuery, state: FSMContext) -> None:
             ),
         )
     elif field == "toggle":
-        watch = next(w for w in storage.list_watches(enabled_only=False) if w.id == watch_id)
-        storage.update_watch(watch_id, enabled=not watch.enabled)
+        watches = storage.list_watches(user_id=call.from_user.id, enabled_only=False)
+        watch = next(w for w in watches if w.id == watch_id)
+        storage.update_watch(watch_id, user_id=call.from_user.id, enabled=not watch.enabled)
         await call.message.edit_text(
             "Запрос возобновлён." if not watch.enabled else "Запрос на паузе."
         )
@@ -817,7 +832,7 @@ async def edit_field(call: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(F.data.startswith("es:"))
 async def edit_set(call: CallbackQuery) -> None:
     _, raw_id, field, value = call.data.split(":")
-    watch = storage.update_watch(int(raw_id), **{field: value})
+    watch = storage.update_watch(int(raw_id), user_id=call.from_user.id, **{field: value})
     await call.message.edit_text("Готово.\n\n" + _fmt_watch(watch))
     await call.answer()
 
@@ -830,7 +845,9 @@ async def edit_price_typed(message: Message, state: FSMContext) -> None:
         await message.answer(str(e))
         return
     data = await state.get_data()
-    watch = storage.update_watch(data["edit_watch_id"], price_from=low, price_to=high)
+    watch = storage.update_watch(
+        data["edit_watch_id"], user_id=data["user_id"], price_from=low, price_to=high
+    )
     await state.clear()
     await message.answer("Готово.\n\n" + _fmt_watch(watch))
 
@@ -839,7 +856,9 @@ async def edit_price_typed(message: Message, state: FSMContext) -> None:
 async def edit_stop_words_typed(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     watch = storage.update_watch(
-        data["edit_watch_id"], stop_words=wizard.parse_stop_words(message.text or "")
+        data["edit_watch_id"],
+        user_id=data["user_id"],
+        stop_words=wizard.parse_stop_words(message.text or ""),
     )
     await state.clear()
     await message.answer("Готово.\n\n" + _fmt_watch(watch))
@@ -847,7 +866,7 @@ async def edit_stop_words_typed(message: Message, state: FSMContext) -> None:
 
 @router.message(Command("export"))
 async def cmd_export(message: Message) -> None:
-    watches = storage.list_watches(enabled_only=False)
+    watches = storage.list_watches(user_id=message.from_user.id, enabled_only=False)
     rows = [[(f"#{w.id} — {texts.watch_label(w)}", f"exp:{w.id}")] for w in watches]
     rows.append([("Все объявления", "exp:all")])
     await message.answer("Что выгружаем?", reply_markup=_kb(rows))
@@ -871,7 +890,7 @@ async def export_pick_format(call: CallbackQuery) -> None:
 async def export_send(call: CallbackQuery) -> None:
     _, watch_ref, fmt = call.data.split(":")
     watch_id = None if watch_ref == "all" else int(watch_ref)
-    path = storage.export(fmt, watch_id)
+    path = storage.export(fmt, watch_id, user_id=call.from_user.id)
     await call.message.edit_text("Готово, отправляю файл…")
     await call.message.answer_document(FSInputFile(path))
     await call.answer()

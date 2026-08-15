@@ -18,6 +18,10 @@ from olx.errors import SchemaError, StorageError
 from olx.models import Filters, NotifyMode, PollMode
 from olx.monitor import Poller
 
+# Тестовый Telegram user_id -- storage.add_watch() теперь мультипользовательский
+# и требует владельца; какой именно id, для большинства тестов не важно.
+USER = 999999
+
 SAMPLE = (
     Path(__file__).resolve().parent / "fixtures" / "sample-response.json"
 )
@@ -64,7 +68,7 @@ def _due(watch_id):
 
 
 def test_full_mode_is_not_polled_at_fast_interval(db):
-    watch = storage.add_watch("q", Filters(), PollMode.FULL, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FULL, NotifyMode.NEW, user_id=USER)
     storage.update_watch(watch.id, last_polled_at=datetime.now(UTC) - timedelta(seconds=60))
     watch = storage.list_watches()[0]
 
@@ -74,7 +78,7 @@ def test_full_mode_is_not_polled_at_fast_interval(db):
 
 
 def test_fast_mode_is_due_after_its_interval(db):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     storage.update_watch(
         watch.id, last_polled_at=datetime.now(UTC) - timedelta(seconds=settings.poll_interval_fast)
     )
@@ -82,8 +86,8 @@ def test_fast_mode_is_due_after_its_interval(db):
 
 
 def test_sleep_waits_for_the_nearest_due_watch(db):
-    fast = storage.add_watch("f", Filters(), PollMode.FAST, NotifyMode.NEW)
-    slow = storage.add_watch("s", Filters(), PollMode.FULL, NotifyMode.NEW)
+    fast = storage.add_watch("f", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
+    slow = storage.add_watch("s", Filters(), PollMode.FULL, NotifyMode.NEW, user_id=USER)
     now = datetime.now(UTC)
     storage.update_watch(fast.id, last_polled_at=now - timedelta(seconds=10))
     storage.update_watch(slow.id, last_polled_at=now)
@@ -99,7 +103,7 @@ def test_pushup_does_not_loop_when_nodes_disagree(db, sample):
     """Аудит: чередование узлов с разным pushup_time уведомляло бесконечно."""
     from olx.parse import parse_listing
 
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW_PUSHUP)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW_PUSHUP, user_id=USER)
     raw = sample["data"][0]
 
     def at(hour):
@@ -121,7 +125,7 @@ def test_pushup_does_not_loop_when_nodes_disagree(db, sample):
 def test_pushup_survives_null_from_a_node(db, sample):
     from olx.parse import parse_listing
 
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW_PUSHUP)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW_PUSHUP, user_id=USER)
     raw = json.loads(json.dumps(sample["data"][0]))
     raw["pushup_time"] = "2026-07-22T12:00:00+03:00"
     with_time = parse_listing(raw)
@@ -142,7 +146,7 @@ def test_pushup_survives_null_from_a_node(db, sample):
 async def test_failed_send_does_not_kill_cycle_and_keeps_listing_unseen(
     db, sample, sent, no_sleep, monkeypatch
 ):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     monkeypatch.setattr(monitor.api, "search_raw", lambda *a, **kw: sample)
 
     await monitor._cycle(Poller(proxies=[]))  # посев
@@ -172,7 +176,7 @@ async def test_failed_send_does_not_kill_cycle_and_keeps_listing_unseen(
 
 @pytest.mark.asyncio
 async def test_alert_failure_does_not_kill_cycle(db, sample, no_sleep, monkeypatch):
-    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
 
     def _blocked(*a, **kw):
         from olx.errors import BlockedError
@@ -202,7 +206,7 @@ def test_broken_response_raises_instead_of_looking_empty(broken):
 
 @pytest.mark.asyncio
 async def test_broken_format_pauses_watch_and_alerts(db, sent, no_sleep, monkeypatch):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     monkeypatch.setattr(monitor.api, "search_raw", lambda *a, **kw: {"results": []})
 
     await monitor._cycle(Poller(proxies=[]))
@@ -217,7 +221,7 @@ async def test_broken_format_pauses_watch_and_alerts(db, sent, no_sleep, monkeyp
 
 @pytest.mark.asyncio
 async def test_empty_first_poll_does_not_consume_seeding(db, sample, sent, no_sleep, monkeypatch):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     monkeypatch.setattr(monitor.api, "search_raw", lambda *a, **kw: {"data": []})
 
     await monitor._cycle(Poller(proxies=[]))
@@ -236,7 +240,7 @@ async def test_empty_first_poll_does_not_consume_seeding(db, sample, sent, no_sl
 
 @pytest.mark.asyncio
 async def test_polling_does_not_freeze_the_event_loop(db, sample, sent, monkeypatch):
-    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
 
     import time as _time
 
@@ -267,7 +271,7 @@ async def test_polling_does_not_freeze_the_event_loop(db, sample, sent, monkeypa
 
 @pytest.mark.asyncio
 async def test_storage_error_does_not_kill_cycle(db, sample, sent, no_sleep, monkeypatch):
-    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
 
     def _locked(*a, **kw):
         raise StorageError("database is locked")
@@ -281,7 +285,7 @@ async def test_storage_error_does_not_kill_cycle(db, sample, sent, no_sleep, mon
 
 @pytest.mark.asyncio
 async def test_repeated_network_failures_raise_an_alert(db, sent, no_sleep, monkeypatch):
-    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
 
     def _down(*a, **kw):
         from olx.errors import TransportError

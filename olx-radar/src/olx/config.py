@@ -1,7 +1,8 @@
 from pathlib import Path
+from typing import Annotated, Any
 
-from pydantic import ValidationError, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import ValidationError, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from olx.errors import ConfigError
 
@@ -18,7 +19,13 @@ class Settings(BaseSettings):
     )
 
     telegram_bot_token: str
+    # Владелец -- получает системные алерты (сбой опроса, поломка формата и т.п.)
+    # независимо от того, сколько человек пользуются ботом; см. notify.send_alert.
     telegram_owner_id: int
+    # Кто вообще может писать боту и заводить свои запросы. Пусто -- бот
+    # однопользовательский, как и раньше: доступ только у telegram_owner_id.
+    # Значение из .env -- через запятую ("111,222,333"), парсится ниже.
+    telegram_allowed_ids: Annotated[list[int], NoDecode] = []
 
     db_path: Path = Path("data/olx.db")
 
@@ -34,6 +41,23 @@ class Settings(BaseSettings):
     backoff_base: float = 2.0
     backoff_max: int = 1800
     log_level: str = "INFO"
+
+    @field_validator("telegram_allowed_ids", mode="before")
+    @classmethod
+    def _parse_allowed_ids(cls, v: Any) -> Any:
+        # pydantic-settings по умолчанию ждёт от list[int] в .env JSON ("[1,2]"),
+        # а не привычную человеку "111,222,333" -- разбираем сами.
+        if isinstance(v, str):
+            return [int(x) for x in v.split(",") if x.strip()]
+        return v
+
+    @model_validator(mode="after")
+    def _owner_is_always_allowed(self) -> "Settings":
+        # Иначе легко забыть вписать себя же в TELEGRAM_ALLOWED_IDS и потерять
+        # доступ к собственному боту после первого передеплоя с этой переменной.
+        if self.telegram_owner_id not in self.telegram_allowed_ids:
+            self.telegram_allowed_ids = [*self.telegram_allowed_ids, self.telegram_owner_id]
+        return self
 
     @field_validator("db_path", "proxy_list_file")
     @classmethod

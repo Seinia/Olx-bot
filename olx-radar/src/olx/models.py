@@ -91,3 +91,7 @@ class Watch:
     created_at: datetime | None = None
     last_polled_at: datetime | None = None
     last_found_at: datetime | None = None
+    # Telegram user_id владельца -- None только у Watch, собранных вручную в тестах
+    # до перехода на мультипользовательский режим; у всего, что реально лежит в БД,
+    # всегда задан (см. storage.add_watch и миграцию в storage.init_db).
+    user_id: int | None = None

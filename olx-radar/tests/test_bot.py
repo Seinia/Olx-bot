@@ -1,4 +1,4 @@
-﻿import json
+import json
 from pathlib import Path
 
 import pytest
@@ -7,6 +7,10 @@ from olx import bot, storage, texts
 from olx.bot import OwnerOnly, _fmt_watch, build_dispatcher
 from olx.config import settings
 from olx.models import Filters, NotifyMode, PollMode
+
+# Тестовый Telegram user_id -- storage.add_watch() теперь мультипользовательский
+# и требует владельца; какой именно id, для большинства тестов не важно.
+USER = 999999
 
 SAMPLE_PATH = Path(__file__).resolve().parent / "fixtures" / "sample-response.json"
 
@@ -33,6 +37,20 @@ async def test_stranger_is_dropped_silently():
     for user in (_User(1), _User(settings.telegram_owner_id + 1), None):
         data = {"event_from_user": user}
         assert await mw(_handler, object(), data) is None
+
+
+@pytest.mark.asyncio
+async def test_allowed_ids_list_passes_multiple_users(monkeypatch):
+    # TELEGRAM_ALLOWED_IDS -- то, что превращает бота из одного владельца в
+    # несколько человек с собственными запросами (см. OwnerOnly).
+    monkeypatch.setattr(settings, "telegram_allowed_ids", [111, 222, 333])
+    mw = OwnerOnly()
+    for uid in (111, 222, 333):
+        data = {"event_from_user": _User(uid)}
+        assert await mw(_handler, object(), data) == "handled"
+
+    data = {"event_from_user": _User(444)}
+    assert await mw(_handler, object(), data) is None
 
 
 def test_dispatcher_builds():
@@ -78,9 +96,7 @@ async def test_category_browsing_does_not_advance_the_step_counter_per_level(fsm
     # берём первый корневой раздел с детьми, чтобы не зависеть от точных id).
     from olx import categories
 
-    root_with_children = next(
-        r for r in categories.children(None) if categories.children(r["id"])
-    )
+    root_with_children = next(r for r in categories.children(None) if categories.children(r["id"]))
     msg2 = _FakeMessage()
     await bot._show_category_level(msg2, fsm_state, parent_id=root_with_children["id"])
     assert "Шаг 2 из 9" in msg2.sent[-1], "номер шага не должен был сдвинуться"
@@ -90,15 +106,69 @@ async def test_category_browsing_does_not_advance_the_step_counter_per_level(fsm
 async def test_add_mode_category_only_watch_has_empty_query(db):
     # Полный путь storage.add_watch() для режима «раздел без фразы» уже покрыт
     # storage-тестами; здесь проверяем именно то, что видит владелец в карточке.
-    watch = storage.add_watch("", Filters(category_id=108), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch(
+        "", Filters(category_id=108), PollMode.FAST, NotifyMode.NEW, user_id=USER
+    )
     assert watch.query == ""
     label = texts.watch_label(watch)
     assert label and "Легков" in label
 
 
+# --- Мультипользовательская изоляция на уровне команд бота: каждый видит и
+# трогает только свои запросы. storage.py уже проверен отдельно (test_storage.py) --
+# здесь важно, что bot.py действительно подставляет message.from_user.id/
+# call.from_user.id, а не что-то одно на всех.
+
+OTHER_USER = 555555
+
+
+@pytest.mark.asyncio
+async def test_cmd_list_only_shows_the_caller_own_watches(db):
+    storage.add_watch("mine", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
+    storage.add_watch(
+        "someone else's", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=OTHER_USER
+    )
+
+    message = _FakeMessage(user_id=USER)
+    await bot.cmd_list(message)
+
+    assert "mine" in message.sent[-1]
+    assert "someone else's" not in message.sent[-1]
+
+
+@pytest.mark.asyncio
+async def test_cmd_del_picker_does_not_offer_someone_elses_watch(db):
+    storage.add_watch("mine", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
+    storage.add_watch(
+        "someone else's", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=OTHER_USER
+    )
+
+    kb = bot._watch_picker("delask", USER)
+    labels = [btn.text for row in kb.inline_keyboard for btn in row]
+    assert any("mine" in label for label in labels)
+    assert not any("else" in label for label in labels)
+
+
+@pytest.mark.asyncio
+async def test_cmd_export_list_only_includes_the_caller_own_watches(db):
+    storage.add_watch("mine", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
+    storage.add_watch(
+        "someone else's", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=OTHER_USER
+    )
+
+    watches = storage.list_watches(user_id=USER, enabled_only=False)
+    assert [w.query for w in watches] == ["mine"]
+
+
+class _FakeUser:
+    def __init__(self, uid=USER):
+        self.id = uid
+
+
 class _FakeMessage:
-    def __init__(self):
+    def __init__(self, user_id=USER):
         self.sent: list[str] = []
+        self.from_user = _FakeUser(user_id)
 
     async def answer(self, text, **kwargs):
         self.sent.append(text)
@@ -116,7 +186,7 @@ def sample():
 
 @pytest.mark.asyncio
 async def test_resume_reports_nothing_to_do_when_all_watches_are_active(db):
-    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     message = _FakeMessage()
 
     await bot.cmd_resume(message)
@@ -126,7 +196,7 @@ async def test_resume_reports_nothing_to_do_when_all_watches_are_active(db):
 
 @pytest.mark.asyncio
 async def test_resume_reactivates_a_watch_that_parses_cleanly_again(db, sample, monkeypatch):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     storage.update_watch(watch.id, enabled=False)
     monkeypatch.setattr(bot.api, "search_raw", lambda *a, **kw: sample)
 
@@ -137,7 +207,7 @@ async def test_resume_reactivates_a_watch_that_parses_cleanly_again(db, sample, 
 
 @pytest.mark.asyncio
 async def test_resume_keeps_a_schema_broken_watch_paused_and_warns(db, monkeypatch):
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     storage.update_watch(watch.id, enabled=False)
     # {"results": []} -- ровно та форма, которую поймало бы SchemaError у монитора:
     # ключа "data" нет, значит формат ответа сломан, а не выдача пуста.
@@ -154,7 +224,7 @@ async def test_resume_keeps_a_schema_broken_watch_paused_and_warns(db, monkeypat
 async def test_resume_does_not_block_on_a_transient_network_failure(db, monkeypatch):
     # Сбой сети при проверке -- не поломка формата: честно приостановленный запрос
     # не должен застрять из-за того, что OLX именно сейчас недоступен.
-    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     storage.update_watch(watch.id, enabled=False)
 
     def _boom(*a, **kw):

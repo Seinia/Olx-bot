@@ -435,7 +435,7 @@ async def maybe_purge(poller: Poller, *, now: datetime | None = None) -> bool:
 
 
 async def run_forever() -> None:
-    storage.init_db(settings.db_path)
+    storage.init_db(settings.db_path, default_owner_id=settings.telegram_owner_id)
     poller = Poller()
     logger.info(
         "Монитор запущен: быстрый режим раз в {} с, полный раз в {} с",

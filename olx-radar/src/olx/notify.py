@@ -296,7 +296,10 @@ async def send_listing(
         reason=reason,
         old_price=old_price,
     )
-    chat_id = settings.telegram_owner_id
+    # Каждому -- в его собственный чат, не оператору: watch.user_id всегда задан у
+    # всего, что реально лежит в БД (см. storage.add_watch); запасной вариант нужен
+    # только тестам, которые собирают Watch вручную без user_id.
+    chat_id = watch.user_id if watch.user_id is not None else settings.telegram_owner_id
     photo_urls = listing.photo_urls or (
         (listing.photo_url,) if listing.photo_url is not None else ()
     )

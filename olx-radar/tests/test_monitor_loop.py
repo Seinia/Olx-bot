@@ -11,6 +11,10 @@ from olx.errors import BlockedError, SchemaError, TransportError
 from olx.models import Filters, NotifyMode, PollMode
 from olx.monitor import Poller
 
+# Тестовый Telegram user_id -- storage.add_watch() теперь мультипользовательский
+# и требует владельца; какой именно id, для большинства тестов не важно.
+USER = 999999
+
 SAMPLE = (
     Path(__file__).resolve().parent / "fixtures" / "sample-response.json"
 )
@@ -23,7 +27,7 @@ def db(tmp_path):
 
 @pytest.fixture
 def watch(db):
-    return storage.add_watch("iphone 13", Filters(), PollMode.FAST, NotifyMode.NEW)
+    return storage.add_watch("iphone 13", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
 
 
 @pytest.fixture

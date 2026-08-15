@@ -8,6 +8,10 @@ from olx import storage
 from olx.models import Filters, NotifyMode, PollMode
 from olx.parse import parse_search_response
 
+# Тестовый Telegram user_id -- storage.add_watch() теперь мультипользовательский
+# и требует владельца; какой именно id, для большинства тестов не важно.
+USER = 999999
+
 SAMPLE_PATH = Path(__file__).resolve().parent / "fixtures" / "sample-response.json"
 
 
@@ -113,8 +117,8 @@ def test_json_fields_match_listing(db_path, sample_listings, exported_file):
 
 
 def test_watch_id_limits_export_to_that_watchs_listings(db_path, sample_listings, exported_file):
-    watch_a = storage.add_watch("a", Filters(), PollMode.FAST, NotifyMode.NEW)
-    watch_b = storage.add_watch("b", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch_a = storage.add_watch("a", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
+    watch_b = storage.add_watch("b", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
 
     seen_by_a, rest = sample_listings[:2], sample_listings[2:5]
     for listing in seen_by_a + rest:
@@ -133,7 +137,7 @@ def test_watch_id_limits_export_to_that_watchs_listings(db_path, sample_listings
 def test_no_watch_id_exports_all_listings_regardless_of_watch(
     db_path, sample_listings, exported_file
 ):
-    watch = storage.add_watch("a", Filters(), PollMode.FAST, NotifyMode.NEW)
+    watch = storage.add_watch("a", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=USER)
     listings = _seed(6, sample_listings)
     storage.mark_seen(watch.id, listings[0])  # только одно попало под watch
 
