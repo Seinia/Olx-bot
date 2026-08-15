@@ -549,3 +549,57 @@ def test_init_db_migrates_pre_existing_watches_to_the_default_owner(tmp_path):
 
     [migrated] = storage.list_watches(user_id=USER_A, enabled_only=False)
     assert migrated.id == 1
+
+
+# --- Доступ к боту: allowed_users -- источник истины для AllowedOnly (bot.py),
+# управляется командами /users, /adduser, /removeuser, а не .env.
+
+OWNER = 100
+FRIEND = 200
+STRANGER = 300
+
+
+def test_is_allowed_false_when_table_is_empty(db_path):
+    assert not storage.is_allowed(OWNER)
+
+
+def test_seed_allowed_users_adds_owner_and_extras(db_path):
+    storage.seed_allowed_users(OWNER, [FRIEND])
+    assert storage.is_allowed(OWNER)
+    assert storage.is_allowed(FRIEND)
+    assert not storage.is_allowed(STRANGER)
+
+
+def test_seed_allowed_users_is_noop_once_table_has_rows(db_path):
+    # .env с TELEGRAM_ALLOWED_IDS не должен на каждом рестарте перетирать то, что
+    # владелец уже накрутил через /adduser -- seed срабатывает только один раз,
+    # пока таблица пуста.
+    storage.seed_allowed_users(OWNER, [FRIEND])
+    storage.remove_allowed_user(FRIEND)  # админ вручную отозвал доступ
+
+    storage.seed_allowed_users(OWNER, [FRIEND])  # рестарт бота, .env не менялся
+
+    assert not storage.is_allowed(FRIEND), "seed не должен воскрешать удалённого"
+
+
+def test_add_allowed_user_is_idempotent(db_path):
+    assert storage.add_allowed_user(FRIEND, added_by=OWNER) is True
+    assert storage.add_allowed_user(FRIEND, added_by=OWNER) is False
+    assert storage.is_allowed(FRIEND)
+
+
+def test_remove_allowed_user_reports_whether_anything_was_removed(db_path):
+    assert storage.remove_allowed_user(FRIEND) is False  # и так не было
+
+    storage.add_allowed_user(FRIEND, added_by=OWNER)
+    assert storage.remove_allowed_user(FRIEND) is True
+    assert not storage.is_allowed(FRIEND)
+
+
+def test_list_allowed_users_reports_who_added_whom(db_path):
+    storage.seed_allowed_users(OWNER)
+    storage.add_allowed_user(FRIEND, added_by=OWNER)
+
+    users = {u["user_id"]: u for u in storage.list_allowed_users()}
+    assert users[OWNER]["added_by"] == OWNER
+    assert users[FRIEND]["added_by"] == OWNER

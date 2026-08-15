@@ -39,6 +39,13 @@ COMMANDS = """<b>Запросы</b>
 /cancel — прервать текущий диалог
 /help — эта справка"""
 
+# Отдельно от COMMANDS: эти три видны в /help только владельцу (см. cmd_help),
+# остальным их показывать смысла нет -- команды всё равно тихо отклонятся.
+OWNER_COMMANDS = """<b>Доступ (только владелец)</b>
+/users — кто может пользоваться ботом
+/adduser telegram_id — добавить
+/removeuser telegram_id — убрать"""
+
 HELP = f"""<b>Справка</b>
 
 {COMMANDS}
@@ -165,6 +172,25 @@ def status(watches: list[Watch], *, fast_interval: int) -> str:
         lines += ["", "⏸ Опрос приостановлен целиком. Возобновить: /resume"]
     else:
         lines += ["", f"<i>Быстрые запросы опрашиваются раз в {fast_interval} с.</i>"]
+    return "\n".join(lines)
+
+
+def users_list(users: list[dict], owner_id: int) -> str:
+    if not users:
+        # Не бывает на практике (владелец всегда сеется первым), но пустой список
+        # не должен падать -- лучше честно сказать, что что-то не так.
+        return "Список доступа пуст — это странно, обратитесь к владельцу бота."
+
+    lines = ["<b>Доступ к боту</b>", ""]
+    for u in users:
+        mark = " (владелец)" if u["user_id"] == owner_id else ""
+        added = _ago(datetime.fromisoformat(u["added_at"]))
+        lines.append(f"• <code>{u['user_id']}</code>{mark} — добавлен {added}")
+    lines += [
+        "",
+        "Добавить: <code>/adduser telegram_id</code>",
+        "Убрать: <code>/removeuser telegram_id</code>",
+    ]
     return "\n".join(lines)
 
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from olx import bot, storage, texts
-from olx.bot import OwnerOnly, _fmt_watch, build_dispatcher
+from olx.bot import AllowedOnly, _fmt_watch, build_dispatcher
 from olx.config import settings
 from olx.models import Filters, NotifyMode, PollMode
 
@@ -25,26 +25,30 @@ async def _handler(event, data):
 
 
 @pytest.mark.asyncio
-async def test_owner_passes():
-    mw = OwnerOnly()
+async def test_owner_passes(db):
+    storage.add_allowed_user(settings.telegram_owner_id, added_by=settings.telegram_owner_id)
+    mw = AllowedOnly()
     data = {"event_from_user": _User(settings.telegram_owner_id)}
     assert await mw(_handler, object(), data) == "handled"
 
 
 @pytest.mark.asyncio
-async def test_stranger_is_dropped_silently():
-    mw = OwnerOnly()
+async def test_stranger_is_dropped_silently(db):
+    # Никого не добавляли в allowed_users -- таблица пуста, все чужие.
+    mw = AllowedOnly()
     for user in (_User(1), _User(settings.telegram_owner_id + 1), None):
         data = {"event_from_user": user}
         assert await mw(_handler, object(), data) is None
 
 
 @pytest.mark.asyncio
-async def test_allowed_ids_list_passes_multiple_users(monkeypatch):
-    # TELEGRAM_ALLOWED_IDS -- то, что превращает бота из одного владельца в
-    # несколько человек с собственными запросами (см. OwnerOnly).
-    monkeypatch.setattr(settings, "telegram_allowed_ids", [111, 222, 333])
-    mw = OwnerOnly()
+async def test_allowed_users_in_db_pass_others_dont(db):
+    # Источник истины -- таблица allowed_users, не .env (см. AllowedOnly): того,
+    # кого не добавили через add_allowed_user/seed_allowed_users, не пускает.
+    for uid in (111, 222, 333):
+        storage.add_allowed_user(uid, added_by=settings.telegram_owner_id)
+
+    mw = AllowedOnly()
     for uid in (111, 222, 333):
         data = {"event_from_user": _User(uid)}
         assert await mw(_handler, object(), data) == "handled"
@@ -182,6 +186,132 @@ def db(tmp_path):
 @pytest.fixture
 def sample():
     return json.loads(SAMPLE_PATH.read_text(encoding="utf-8"))
+
+
+class _FakeCommand:
+    def __init__(self, args=None):
+        self.args = args
+
+
+# --- /users, /adduser, /removeuser: доступны только реальному владельцу
+# (settings.telegram_owner_id, он же USER в этих тестах -- см. .env в conftest),
+# не любому, кто просто есть в allowed_users.
+
+FRIEND = 555555
+NOT_OWNER = 777777  # обычный разрешённый пользователь, не владелец
+
+
+@pytest.mark.asyncio
+async def test_cmd_users_lists_everyone_for_owner(db):
+    storage.seed_allowed_users(USER, [FRIEND])
+    message = _FakeMessage(user_id=USER)
+
+    await bot.cmd_users(message)
+
+    assert str(USER) in message.sent[-1]
+    assert str(FRIEND) in message.sent[-1]
+
+
+@pytest.mark.asyncio
+async def test_cmd_users_silently_ignored_for_non_owner(db):
+    storage.seed_allowed_users(USER, [NOT_OWNER])
+    message = _FakeMessage(user_id=NOT_OWNER)
+
+    await bot.cmd_users(message)
+
+    assert message.sent == []
+
+
+@pytest.mark.asyncio
+async def test_cmd_adduser_grants_access(db):
+    storage.seed_allowed_users(USER)
+    message = _FakeMessage(user_id=USER)
+
+    await bot.cmd_adduser(message, _FakeCommand(str(FRIEND)))
+
+    assert storage.is_allowed(FRIEND)
+    assert str(FRIEND) in message.sent[-1]
+
+
+@pytest.mark.asyncio
+async def test_cmd_adduser_twice_reports_already_present(db):
+    storage.seed_allowed_users(USER)
+    message = _FakeMessage(user_id=USER)
+
+    await bot.cmd_adduser(message, _FakeCommand(str(FRIEND)))
+    await bot.cmd_adduser(message, _FakeCommand(str(FRIEND)))
+
+    assert "уже был" in message.sent[-1]
+
+
+@pytest.mark.asyncio
+async def test_cmd_adduser_rejects_non_numeric_args(db):
+    storage.seed_allowed_users(USER)
+    message = _FakeMessage(user_id=USER)
+
+    for bad_args in (None, "", "не число", "12abc"):
+        await bot.cmd_adduser(message, _FakeCommand(bad_args))
+
+    assert not storage.is_allowed(FRIEND)
+    assert all("Формат" in text for text in message.sent)
+
+
+@pytest.mark.asyncio
+async def test_cmd_adduser_ignored_for_non_owner(db):
+    storage.seed_allowed_users(USER, [NOT_OWNER])
+    message = _FakeMessage(user_id=NOT_OWNER)
+
+    await bot.cmd_adduser(message, _FakeCommand(str(FRIEND)))
+
+    assert not storage.is_allowed(FRIEND)
+    assert message.sent == []
+
+
+@pytest.mark.asyncio
+async def test_cmd_removeuser_revokes_access_and_pauses_watches(db):
+    storage.seed_allowed_users(USER, [FRIEND])
+    watch = storage.add_watch("q", Filters(), PollMode.FAST, NotifyMode.NEW, user_id=FRIEND)
+    message = _FakeMessage(user_id=USER)
+
+    await bot.cmd_removeuser(message, _FakeCommand(str(FRIEND)))
+
+    assert not storage.is_allowed(FRIEND)
+    [reloaded] = storage.list_watches(user_id=FRIEND, enabled_only=False)
+    assert reloaded.id == watch.id
+    assert not reloaded.enabled
+    assert "1" in message.sent[-1]  # "приостановлено: 1"
+
+
+@pytest.mark.asyncio
+async def test_cmd_removeuser_cannot_remove_the_owner(db):
+    storage.seed_allowed_users(USER)
+    message = _FakeMessage(user_id=USER)
+
+    await bot.cmd_removeuser(message, _FakeCommand(str(USER)))
+
+    assert storage.is_allowed(USER)
+    assert "владелец" in message.sent[-1]
+
+
+@pytest.mark.asyncio
+async def test_cmd_removeuser_reports_when_not_in_list(db):
+    storage.seed_allowed_users(USER)
+    message = _FakeMessage(user_id=USER)
+
+    await bot.cmd_removeuser(message, _FakeCommand(str(FRIEND)))
+
+    assert "и так не было" in message.sent[-1]
+
+
+@pytest.mark.asyncio
+async def test_cmd_removeuser_ignored_for_non_owner(db):
+    storage.seed_allowed_users(USER, [NOT_OWNER, FRIEND])
+    message = _FakeMessage(user_id=NOT_OWNER)
+
+    await bot.cmd_removeuser(message, _FakeCommand(str(FRIEND)))
+
+    assert storage.is_allowed(FRIEND)
+    assert message.sent == []
 
 
 @pytest.mark.asyncio

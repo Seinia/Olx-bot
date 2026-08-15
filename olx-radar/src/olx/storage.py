@@ -84,6 +84,16 @@ CREATE TABLE IF NOT EXISTS watch_seen (
     notified_at     TEXT,
     PRIMARY KEY (watch_id, listing_id)
 );
+
+-- Кому вообще можно писать боту. Источник истины -- эта таблица, а не .env:
+-- TELEGRAM_ALLOWED_IDS используется только один раз, для затравки пустой таблицы
+-- при первом запуске (см. seed_allowed_users), дальше правится командами
+-- /adduser, /removeuser -- без правки .env и без перезапуска бота.
+CREATE TABLE IF NOT EXISTS allowed_users (
+    user_id    INTEGER PRIMARY KEY,
+    added_at   TEXT    NOT NULL,
+    added_by   INTEGER NOT NULL
+);
 """
 
 # Публичные функции не принимают connection/path (см. сигнатуры в контрактах) --
@@ -438,6 +448,67 @@ def last_refresh(watch_id: int, listing_id: int) -> datetime | None:
             (watch_id, listing_id),
         ).fetchone()
     return _opt_datetime(row["last_refresh_at"]) if row is not None else None
+
+
+# --- Доступ пользователей: кто вообще может писать боту (см. AllowedOnly в bot.py).
+# Управляется командами /users, /adduser, /removeuser -- не .env, см. комментарий
+# у CREATE TABLE allowed_users выше.
+
+
+def seed_allowed_users(owner_id: int, extra_ids: list[int] | None = None) -> None:
+    """Затравка ТОЛЬКО пустой таблицы -- первый запуск после этой миграции.
+
+    Если в allowed_users уже что-то есть (например, владелец уже управлял списком
+    через /adduser), ничего не делает: .env не должен на каждом рестарте
+    перетирать то, что накопилось в БД.
+    """
+    with _connection() as conn:
+        already_seeded = conn.execute("SELECT 1 FROM allowed_users LIMIT 1").fetchone()
+        if already_seeded is not None:
+            return
+        now = datetime.now(UTC).isoformat()
+        for uid in {owner_id, *(extra_ids or [])}:
+            conn.execute(
+                "INSERT OR IGNORE INTO allowed_users (user_id, added_at, added_by) "
+                "VALUES (?, ?, ?)",
+                (uid, now, owner_id),
+            )
+        conn.commit()
+
+
+def is_allowed(user_id: int) -> bool:
+    with _connection() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM allowed_users WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    return row is not None
+
+
+def add_allowed_user(user_id: int, *, added_by: int) -> bool:
+    """True -- добавлен впервые. False -- уже был в списке (идемпотентно, не ошибка)."""
+    with _connection() as conn:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO allowed_users (user_id, added_at, added_by) VALUES (?, ?, ?)",
+            (user_id, datetime.now(UTC).isoformat(), added_by),
+        )
+        conn.commit()
+    return cur.rowcount > 0
+
+
+def remove_allowed_user(user_id: int) -> bool:
+    """True -- реально был и удалён. False -- и так не было в списке."""
+    with _connection() as conn:
+        cur = conn.execute("DELETE FROM allowed_users WHERE user_id = ?", (user_id,))
+        conn.commit()
+    return cur.rowcount > 0
+
+
+def list_allowed_users() -> list[dict[str, Any]]:
+    with _connection() as conn:
+        rows = conn.execute(
+            "SELECT user_id, added_at, added_by FROM allowed_users ORDER BY added_at"
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 # Порядок и подписи полей выгрузки -- одни для CSV и JSON (контракты требуют только

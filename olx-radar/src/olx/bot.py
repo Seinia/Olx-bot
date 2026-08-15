@@ -8,7 +8,7 @@ from typing import Any
 from aiogram import BaseMiddleware, Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State as FSMState
 from aiogram.fsm.state import StatesGroup
@@ -56,11 +56,13 @@ def _kb(rows: list[list[tuple[str, str]]]) -> InlineKeyboardMarkup:
     )
 
 
-class OwnerOnly(BaseMiddleware):
-    """Пропускает только тех, кто в списке разрешённых (settings.telegram_allowed_ids).
+class AllowedOnly(BaseMiddleware):
+    """Пропускает только тех, кто есть в БД (storage.is_allowed).
 
-    Чужие сообщения отбрасываются молча: ответ вроде «доступ запрещён» подтверждает,
-    что бот живой и чем-то занят, и превращает случайного прохожего в интересующегося.
+    Источник истины -- таблица allowed_users, не .env: список правится командами
+    /adduser, /removeuser в рантайме, без перезапуска бота. Чужие сообщения
+    отбрасываются молча: ответ вроде «доступ запрещён» подтверждает, что бот
+    живой и чем-то занят, и превращает случайного прохожего в интересующегося.
     """
 
     async def __call__(
@@ -70,10 +72,18 @@ class OwnerOnly(BaseMiddleware):
         data: dict[str, Any],
     ) -> Any:
         user = data.get("event_from_user")
-        if user is None or user.id not in settings.telegram_allowed_ids:
+        if user is None or not storage.is_allowed(user.id):
             logger.warning("Отброшено сообщение от чужого id={}", getattr(user, "id", "?"))
             return None
         return await handler(event, data)
+
+
+def _is_owner(message: Message) -> bool:
+    # Отдельная, более строгая проверка поверх AllowedOnly: управлять списком
+    # доступа может только реальный владелец (settings.telegram_owner_id), а не
+    # любой, кого туда когда-то добавили -- иначе любой приглашённый друг мог бы
+    # добавить кого угодно ещё или, что хуже, удалить самого владельца.
+    return message.from_user is not None and message.from_user.id == settings.telegram_owner_id
 
 
 _fmt_watch = texts.watch_card
@@ -103,14 +113,20 @@ async def _step_same(
 
 @router.message(CommandStart())
 async def cmd_start(message: Message) -> None:
-    await message.answer(texts.START.format(commands=texts.COMMANDS))
+    commands = texts.COMMANDS
+    if _is_owner(message):
+        commands += f"\n\n{texts.OWNER_COMMANDS}"
+    await message.answer(texts.START.format(commands=commands))
 
 
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
-    await message.answer(
-        texts.HELP.format(fast=settings.poll_interval_fast, full=settings.poll_interval_full // 60)
+    help_text = texts.HELP.format(
+        fast=settings.poll_interval_fast, full=settings.poll_interval_full // 60
     )
+    if _is_owner(message):
+        help_text += f"\n\n{texts.RULE}\n\n{texts.OWNER_COMMANDS}"
+    await message.answer(help_text)
 
 
 @router.message(Command("list"))
@@ -128,6 +144,79 @@ async def cmd_status(message: Message) -> None:
             fast_interval=settings.poll_interval_fast,
         )
     )
+
+
+# --- Управление доступом. Только для реального владельца (_is_owner), не для
+# любого, кто есть в allowed_users -- см. комментарий у _is_owner выше.
+
+
+@router.message(Command("users"))
+async def cmd_users(message: Message) -> None:
+    if not _is_owner(message):
+        return
+    await message.answer(texts.users_list(storage.list_allowed_users(), settings.telegram_owner_id))
+
+
+@router.message(Command("adduser"))
+async def cmd_adduser(message: Message, command: CommandObject) -> None:
+    if not _is_owner(message):
+        return
+    user_id = _parse_user_id_arg(command.args)
+    if user_id is None:
+        await message.answer(
+            "Формат: <code>/adduser telegram_id</code>. "
+            "Узнать свой id можно у @userinfobot."
+        )
+        return
+    added = storage.add_allowed_user(user_id, added_by=message.from_user.id)
+    if added:
+        await message.answer(
+            f"Пользователь <code>{user_id}</code> добавлен. "
+            "Пусть напишет боту /start и заведёт свои запросы через /add."
+        )
+    else:
+        await message.answer(f"Пользователь <code>{user_id}</code> уже был в списке.")
+
+
+@router.message(Command("removeuser"))
+async def cmd_removeuser(message: Message, command: CommandObject) -> None:
+    if not _is_owner(message):
+        return
+    user_id = _parse_user_id_arg(command.args)
+    if user_id is None:
+        await message.answer("Формат: <code>/removeuser telegram_id</code>.")
+        return
+    if user_id == settings.telegram_owner_id:
+        await message.answer("Нельзя убрать себя из списка — вы владелец бота.")
+        return
+
+    removed = storage.remove_allowed_user(user_id)
+    if not removed:
+        await message.answer(f"Пользователя <code>{user_id}</code> и так не было в списке.")
+        return
+
+    # Отзыв доступа блокирует НОВЫЕ сообщения боту, но не отменяет уже созданные
+    # запросы -- notify.py шлёт уведомления по watch.user_id, а не по allowed_users
+    # (бот технически может писать любому, кто хоть раз нажал /start, независимо
+    # от нашего списка). Без явной паузы человек продолжал бы получать уведомления,
+    # уже не имея возможности сам ничем управлять -- ставим на паузу вместо тихого
+    # рассинхрона между "доступа нет" и "а находки всё равно идут".
+    paused = 0
+    for w in storage.list_watches(user_id=user_id, enabled_only=True):
+        storage.update_watch(w.id, user_id=user_id, enabled=False)
+        paused += 1
+
+    text = f"Пользователь <code>{user_id}</code> удалён из списка доступа."
+    if paused:
+        text += f" Его активных запросов приостановлено: {paused}."
+    await message.answer(text)
+
+
+def _parse_user_id_arg(args: str | None) -> int | None:
+    if args is None:
+        return None
+    token = args.strip().split()[0] if args.strip() else ""
+    return int(token) if token.lstrip("-").isdigit() else None
 
 
 @router.message(Command("pause"))
@@ -898,7 +987,7 @@ async def export_send(call: CallbackQuery) -> None:
 
 def build_dispatcher() -> Dispatcher:
     dp = Dispatcher()
-    dp.update.outer_middleware(OwnerOnly())
+    dp.update.outer_middleware(AllowedOnly())
     dp.include_router(router)
     return dp
 
